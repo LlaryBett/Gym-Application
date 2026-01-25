@@ -1,0 +1,50 @@
+# Logs
+logs
+*.log
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+pnpm-debug.log*
+lerna-debug.log*
+
+node_modules
+dist
+dist-ssr
+*.local
+
+# Editor directories and files
+.vscode/*
+!.vscode/extensions.json
+.idea
+.DS_Store
+*.suo
+*.ntvs*
+*.njsproj
+*.sln
+*.sw?
+{/* Trainer 4 - Regular */}
+          <div className="flex flex-col items-center mt-32">
+            <div className="bg-white rounded-xl shadow-lg overflow-hidden hover:shadow-orange transition-shadow h-48 w-full">
+              <img src={TRAINERS[3].image} alt={TRAINERS[3].name} className="w-full h-full object-cover" />
+            </div>
+            <h3 className="text-sm font-bold mt-3 text-black-900">{TRAINERS[3].name}</h3>
+            <p className="text-orange-500 font-semibold text-xs">{TRAINERS[3].specialty}</p>
+          </div>
+          
+          {/* Trainer 5 - Regular */}
+          <div className="flex flex-col items-center mt-32">
+            <div className="bg-white rounded-xl shadow-lg overflow-hidden hover:shadow-orange transition-shadow h-48 w-full">
+              <img src={TRAINERS[4].image} alt={TRAINERS[4].name} className="w-full h-full object-cover" />
+            </div>
+            <h3 className="text-sm font-bold mt-3 text-black-900">{TRAINERS[4].name}</h3>
+            <p className="text-orange-500 font-semibold text-xs">{TRAINERS[4].specialty}</p>
+          </div>
+          
+          {/* Trainer 6 - Secondary Featured (Larger) */}
+          <div className="flex flex-col items-center">
+            <div className="bg-gradient-to-br from-orange-400 to-orange-600 rounded-xl shadow-lg overflow-hidden hover:shadow-orange transition-shadow h-56 w-full">
+              <img src={TRAINERS[5].image} alt={TRAINERS[5].name} className="w-full h-full object-cover border-4 border-white" />
+            </div>
+            <h3 className="text-sm font-bold mt-3 text-black-900">{TRAINERS[5].name}</h3>
+            <p className="text-orange-500 font-semibold text-xs">{TRAINERS[5].specialty}</p>
+          </div>
