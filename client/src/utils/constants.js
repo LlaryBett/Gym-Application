@@ -4,7 +4,7 @@ export const NAV_LINKS = [
   { name: 'Trainers', path: '#trainers' },
   { name: 'Services', path: '#services' },
   { name: 'Membership', path: '#membership' },
-  { name: 'Contact', path: '#contact' },
+  { name: 'Programs/Classes', path: '#programs-events' },
 ]
 
 // Services
@@ -12,38 +12,90 @@ export const SERVICES = [
   {
     id: 1,
     title: 'Personal Training',
-    description: 'One-on-one sessions with certified trainers',
-    icon: '💪',
+    image: '/images/trainers/pexels-julia-larson-6456166.jpg',
+    description: 'One-on-one coaching tailored to your fitness goals.',
+    featured: true,
   },
   {
     id: 2,
     title: 'Group Classes',
-    description: 'HIIT, Yoga, Zumba, Spin, and more',
-    icon: '👥',
+    image: '/images/trainers/pexels-malcolm-garret-3023588-5535931.jpg',
+    description: 'High-energy group workouts led by expert trainers.',
+    featured: true,
   },
   {
     id: 3,
-    title: 'Weight Training',
-    description: 'State-of-the-art equipment and free weights',
-    icon: '🏋️',
+    title: 'Nutrition Plans',
+    image: '/images/trainers/pexels-gustavo-fring-5622219.jpg',
+    description: 'Personalized meal plans to support your training.',
+    featured: true,
   },
   {
     id: 4,
-    title: 'Cardio Zone',
-    description: 'Treadmills, bikes, and ellipticals',
-    icon: '🏃',
+    title: 'Recovery & Spa',
+    image: '/images/trainers/pexels-huum-sauna-heaters-718199222-31092914.jpg',
+    description: 'Relax, recover, and recharge with our premium facilities.',
+    featured: true,
   },
   {
     id: 5,
-    title: 'Nutrition Planning',
-    description: 'Custom meal plans and consultations',
-    icon: '🥗',
+    title: 'Sports Performance',
+    image: 'https://images.pexels.com/photos/863988/pexels-photo-863988.jpeg',
+    description: 'Athlete-focused training to enhance speed, agility, and power.',
+    featured: false,
   },
   {
     id: 6,
-    title: 'Recovery',
-    description: 'Sauna, massage, and stretching areas',
-    icon: '🧘',
+    title: 'Yoga & Flexibility',
+    image: 'https://images.pexels.com/photos/3822906/pexels-photo-3822906.jpeg',
+    description: 'Improve mobility and mindfulness through guided yoga sessions.',
+    featured: false,
+  },
+  {
+    id: 7,
+    title: 'Strength & Conditioning',
+    image: 'https://images.pexels.com/photos/791763/pexels-photo-791763.jpeg',
+    description: 'Build muscle and increase endurance with specialized programs.',
+    featured: false,
+  },
+  {
+    id: 8,
+    title: 'Virtual Training',
+    image: 'https://images.pexels.com/photos/4498606/pexels-photo-4498606.jpeg',
+    description: 'Train from anywhere with live or on-demand online sessions.',
+    featured: false,
+  },
+]
+
+// Programs / Events
+export const PROGRAMS = [
+  {
+    id: 1,
+    title: 'Summer Bootcamp',
+    image: 'https://images.pexels.com/photos/414029/pexels-photo-414029.jpeg',
+    description: 'Intense 6-week program to get in shape fast!',
+    category: 'Fitness',
+  },
+  {
+    id: 2,
+    title: 'Wellness Workshop',
+    image: 'https://images.pexels.com/photos/3757951/pexels-photo-3757951.jpeg',
+    description: 'Mindfulness, nutrition, and holistic health guidance.',
+    category: 'Wellness',
+  },
+  {
+    id: 3,
+    title: 'Strength Challenge',
+    image: 'https://images.pexels.com/photos/2261485/pexels-photo-2261485.jpeg',
+    description: 'Push your limits with our 8-week strength program.',
+    category: 'Fitness',
+  },
+  {
+    id: 4,
+    title: 'Yoga Retreat',
+    image: 'https://images.pexels.com/photos/3823031/pexels-photo-3823031.jpeg',
+    description: 'Weekend retreat focused on flexibility and mental health.',
+    category: 'Wellness',
   },
 ]
 

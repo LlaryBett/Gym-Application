@@ -4,6 +4,7 @@ import CTA from '../components/CTA'
 import Benefits from '../components/Benefits'
 import Recovery from '../components/Recovery'
 import TestimonialCard from '../components/TestimonialCard'
+import { FeaturedServices } from '../components/FeaturedServices'
 export default function Home() {
   const scrollToSection = (sectionId) => {
     const element = document.getElementById(sectionId)
@@ -164,7 +165,7 @@ export default function Home() {
 
 <Benefits />
 
-<Recovery />
+<FeaturedServices />
 <section className="py-12 bg-gradient-to-b from-white to-gray-300">
   <div className="container mx-auto px-4">
     

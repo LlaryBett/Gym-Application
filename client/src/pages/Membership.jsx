@@ -54,16 +54,30 @@ const Membership = () => {
 
   return (
     <div>
-      {/* Hero Section */}
+      {/* Hero / Header Section */}
       <section className="relative py-12 bg-gradient-to-b from-white to-gray-50">
-        <div className="container mx-auto px-4">
-          <div className="text-center mb-12">
-            <h1 className="text-4xl md:text-5xl font-bold mb-4">
-              Choose Your <span className="text-orange-500">Fitness Plan</span>
-            </h1>
-            <p className="text-lg text-gray-600 max-w-2xl mx-auto">
-              Select the perfect membership that fits your fitness goals and lifestyle.
-            </p>
+        <div className="container mx-auto px-16">
+
+          {/* Header Row */}
+          <div className="flex flex-col lg:flex-row items-start justify-between mb-12 gap-6">
+            <div className="lg:w-1/3 text-left">
+              <h1 className="text-4xl md:text-5xl font-bold text-orange-500">
+                Choose Your <span className="text-orange-500">Fitness Plan</span>
+              </h1>
+            </div>
+
+            <div className="lg:w-1/3 text-center">
+              <p className="text-xl md:text-2xl font-semibold text-black-900">
+                Select the perfect membership that fits your fitness goals <br/>
+                and lifestyle
+              </p>
+            </div>
+
+            <div className="lg:w-1/3 text-right">
+              <p className="text-black-700">
+                Our plans are designed to keep you motivated and progressing, whether you’re starting your fitness journey or aiming to reach peak performance.
+              </p>
+            </div>
           </div>
 
           {/* Billing Toggle */}
@@ -103,31 +117,22 @@ const Membership = () => {
                     : 'bg-white border-2 border-gray-200'
                 }`}
               >
-                {/* Plan Name */}
                 <h3 className="text-2xl font-bold mb-2">{plan.name}</h3>
                 <p className={`text-sm mb-6 ${plan.highlighted ? 'text-orange-100' : 'text-gray-600'}`}>
                   {plan.description}
                 </p>
 
-                {/* Price */}
                 <div className="mb-6">
-                  <span className="text-4xl font-bold">
-                    ${plan.price[billingCycle]}
-                  </span>
+                  <span className="text-4xl font-bold">${plan.price[billingCycle]}</span>
                   <span className={plan.highlighted ? 'text-orange-100' : 'text-gray-600'}>
                     /{billingCycle === 'monthly' ? 'month' : 'year'}
                   </span>
                 </div>
 
-                {/* CTA Button */}
-                <Button
-                  variant={plan.highlighted ? 'default' : 'accent'}
-                  className="w-full mb-8"
-                >
+                <Button variant="accent" className="w-full mb-8">
                   Get Started
                 </Button>
 
-                {/* Features */}
                 <ul className="space-y-3">
                   {plan.features.map((feature, idx) => (
                     <li key={idx} className="flex items-center gap-3">
@@ -148,29 +153,51 @@ const Membership = () => {
         </div>
       </section>
 
-      {/* FAQ Section */}
-      <section className="py-12 bg-gray-50">
-        <div className="container mx-auto px-4 max-w-3xl">
-          <h2 className="text-3xl font-bold text-center mb-12">
-            Frequently Asked <span className="text-orange-500">Questions</span>
-          </h2>
+      {/* How to Join + FAQ Section (Two Columns) */}
+      <section className="py-16 bg-gray-50">
+        <div className="max-w-7xl mx-auto px-16">
+          <div className="grid md:grid-cols-2 gap-12">
 
-          <div className="space-y-4">
-            {/*
-              { q: 'Can I cancel anytime?', a: 'Yes, you can cancel your membership at any time with no penalties.' },
-              { q: 'Do you offer a free trial?', a: 'Yes, we offer a 7-day free trial for all membership plans.' },
-              { q: 'Can I upgrade or downgrade?', a: 'Absolutely! You can change your plan anytime, prorated to your billing cycle.' },
-            */}
-            { [
-              { q: 'Can I cancel anytime?', a: 'Yes, you can cancel your membership at any time with no penalties.' },
-              { q: 'Do you offer a free trial?', a: 'Yes, we offer a 7-day free trial for all membership plans.' },
-              { q: 'Can I upgrade or downgrade?', a: 'Absolutely! You can change your plan anytime, prorated to your billing cycle.' },
-            ].map((faq, idx) => (
-              <div key={idx} className="bg-white p-6 rounded-lg border border-gray-200">
-                <h4 className="font-semibold mb-2">{faq.q}</h4>
-                <p className="text-gray-600 text-sm">{faq.a}</p>
+            {/* Left — How to Join */}
+            <div>
+              <h2 className="text-3xl font-bold mb-6 text-orange-500">How to Join PowerGym</h2>
+              <ul className="space-y-4">
+                {[
+                  'Select your preferred membership plan.',
+                  'Visit us or fill out the online form.',
+                  'Make a secure payment at the front desk.',
+                  'Begin your fitness journey immediately!',
+                ].map((step, idx) => (
+                  <li key={idx} className="flex items-start gap-3">
+                    <div className="w-8 h-8 flex items-center justify-center rounded-full bg-orange-500 text-white font-bold">
+                      {idx + 1}
+                    </div>
+                    <p className="text-gray-700 font-semibold">{step}</p>
+                  </li>
+                ))}
+              </ul>
+              <button className="mt-6 bg-orange-500 text-white px-8 py-3 rounded-full font-semibold hover:bg-orange-600 transition">
+                Join Now
+              </button>
+            </div>
+
+            {/* Right — FAQ */}
+            <div>
+              <h2 className="text-3xl font-bold mb-6 text-orange-500">Frequently Asked Questions</h2>
+              <div className="space-y-4">
+                {[
+                  { q: 'Can I cancel anytime?', a: 'Yes, you can cancel your membership at any time with no penalties.' },
+                  { q: 'Do you offer a free trial?', a: 'Yes, we offer a 7-day free trial for all membership plans.' },
+                  { q: 'Can I upgrade or downgrade?', a: 'Absolutely! You can change your plan anytime, prorated to your billing cycle.' },
+                ].map((faq, idx) => (
+                  <div key={idx} className="bg-white p-6 rounded-lg border border-gray-200">
+                    <h4 className="font-semibold mb-2">{faq.q}</h4>
+                    <p className="text-gray-600 text-sm">{faq.a}</p>
+                  </div>
+                ))}
               </div>
-            ))}
+            </div>
+
           </div>
         </div>
       </section>

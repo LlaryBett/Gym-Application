@@ -1,24 +1,16 @@
 import { useState } from 'react'
 import { NAV_LINKS } from '../utils/constants'
 import Button from './Button'
+import { Link, useLocation } from 'react-router-dom'
 
 export default function Header() {
   const [isMenuOpen, setIsMenuOpen] = useState(false)
+  const location = useLocation()
 
-  const handleNavClick = (path) => {
-    // Extract section ID from path (e.g., "#home" or "home")
-    const sectionId = path.startsWith('#') ? path.substring(1) : path.replace('/', '')
-    const element = document.getElementById(sectionId)
-    
-    if (element) {
-      element.scrollIntoView({ 
-        behavior: 'smooth',
-        block: 'start'
-      })
-    }
-    
-    // Close mobile menu if open
-    setIsMenuOpen(false)
+  const getActive = (path) => {
+    // Remove hash if present and compare with current pathname
+    const cleanPath = path.replace('#', '')
+    return location.pathname === (cleanPath.startsWith('/') ? cleanPath : `/${cleanPath}`)
   }
 
   return (
@@ -29,30 +21,51 @@ export default function Header() {
         {/* Desktop Header */}
         <div className="grid grid-cols-3 items-center">
           {/* Logo — Left */}
-          <div className="flex items-center space-x-2 cursor-pointer" onClick={() => window.scrollTo({ top: 0, behavior: 'smooth' })}>
+          <Link
+            className="flex items-center space-x-2 cursor-pointer"
+            to="/"
+            onClick={() => setIsMenuOpen(false)}
+          >
             <div className="w-10 h-10 bg-orange-500 rounded-full" />
             <span className="text-2xl font-heading font-bold text-black-900">
               Power<span className="text-orange-500">Gym</span>
             </span>
-          </div>
+          </Link>
 
           {/* Navigation — Center */}
           <nav className="hidden md:flex justify-center space-x-8">
             {NAV_LINKS.map((link) => (
-              <button
+              <Link
                 key={link.name}
-                onClick={() => handleNavClick(link.path)}
-                className="text-black-700 hover:text-orange-500 font-medium transition-colors bg-transparent border-none cursor-pointer"
+                to={link.path.replace('#', '/').replace(/^\/home$/, '/')}
+                onClick={() => setIsMenuOpen(false)}
+                className={`font-medium transition-colors bg-transparent border-none cursor-pointer ${
+                  getActive(link.path)
+                    ? 'text-orange-500'
+                    : 'text-black-700 hover:text-orange-500'
+                }`}
               >
                 {link.name}
-              </button>
+              </Link>
             ))}
           </nav>
 
           {/* CTAs — Right */}
           <div className="hidden md:flex items-center justify-end space-x-4">
-            <Button variant="outline" onClick={() => handleNavClick('#services')}>View Classes</Button>
-            <Button variant="accent" onClick={() => handleNavClick('#membership')}>Join Now</Button>
+            <Link to="/services" tabIndex={-1}>
+              <Button
+                variant="outline"
+              >
+                View Classes
+              </Button>
+            </Link>
+            <Link to="/membership" tabIndex={-1}>
+              <Button
+                variant="accent"
+              >
+                Join Now
+              </Button>
+            </Link>
           </div>
 
           {/* Mobile Menu Button */}
@@ -87,23 +100,38 @@ export default function Header() {
         {isMenuOpen && (
           <nav className="md:hidden mt-4 pb-4 space-y-3">
             {NAV_LINKS.map((link) => (
-              <button
+              <Link
                 key={link.name}
-                onClick={() => handleNavClick(link.path)}
-                className="block py-2 text-black-700 hover:text-orange-500 font-medium bg-transparent border-none w-full text-left cursor-pointer"
+                to={link.path.replace('#', '/').replace(/^\/home$/, '/')}
+                onClick={() => setIsMenuOpen(false)}
+                className={`block py-2 font-medium bg-transparent border-none w-full text-left cursor-pointer ${
+                  getActive(link.path)
+                    ? 'text-orange-500'
+                    : 'text-black-700 hover:text-orange-500'
+                }`}
               >
                 {link.name}
-              </button>
+              </Link>
             ))}
 
             {/* Mobile CTAs */}
             <div className="pt-3 space-y-3">
-              <Button variant="outline" fullWidth onClick={() => handleNavClick('#services')}>
-                View Classes
-              </Button>
-              <Button variant="accent" fullWidth onClick={() => handleNavClick('#membership')}>
-                Join Now
-              </Button>
+              <Link to="/services" tabIndex={-1} onClick={() => setIsMenuOpen(false)}>
+                <Button
+                  variant="outline"
+                  fullWidth
+                >
+                  View Classes
+                </Button>
+              </Link>
+              <Link to="/membership" tabIndex={-1} onClick={() => setIsMenuOpen(false)}>
+                <Button
+                  variant="accent"
+                  fullWidth
+                >
+                  Join Now
+                </Button>
+              </Link>
             </div>
           </nav>
         )}
@@ -111,7 +139,3 @@ export default function Header() {
     </header>
   )
 }
-
-
-
-
