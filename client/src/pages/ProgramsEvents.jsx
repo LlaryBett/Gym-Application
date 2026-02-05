@@ -40,6 +40,20 @@ const SCHEDULE = {
 
 const ProgramsEvents = () => {
   const [activeDay, setActiveDay] = useState('Mon')
+  const [programIndex, setProgramIndex] = useState(0)
+  const programsPerPage = 4
+
+  const totalPrograms = PROGRAMS.length
+  const maxIndex = Math.max(0, totalPrograms - programsPerPage)
+  const visiblePrograms = PROGRAMS.slice(programIndex, programIndex + programsPerPage)
+
+  const handlePrev = () => {
+    setProgramIndex((prev) => Math.max(0, prev - programsPerPage))
+  }
+
+  const handleNext = () => {
+    setProgramIndex((prev) => Math.min(maxIndex, prev + programsPerPage))
+  }
 
   return (
     <div>
@@ -90,7 +104,7 @@ const ProgramsEvents = () => {
 
             {/* Programs Grid */}
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
-              {PROGRAMS.map(program => (
+              {visiblePrograms.map(program => (
                 <div
                   key={program.id}
                   className="relative rounded-2xl overflow-hidden shadow-lg group bg-white"
@@ -120,10 +134,20 @@ const ProgramsEvents = () => {
             {/* Bottom Row */}
             <div className="mt-8 flex justify-between items-center">
               <div className="flex gap-4">
-                <button className="bg-white text-black px-4 py-2 rounded-full font-semibold shadow hover:bg-gray-100 transition">
+                <button
+                  className="bg-white text-black px-4 py-2 rounded-full font-semibold shadow hover:bg-gray-100 transition"
+                  onClick={handlePrev}
+                  disabled={programIndex === 0}
+                  aria-label="Previous"
+                >
                   &lt;
                 </button>
-                <button className="bg-white text-black px-4 py-2 rounded-full font-semibold shadow hover:bg-gray-100 transition">
+                <button
+                  className="bg-white text-black px-4 py-2 rounded-full font-semibold shadow hover:bg-gray-100 transition"
+                  onClick={handleNext}
+                  disabled={programIndex >= maxIndex}
+                  aria-label="Next"
+                >
                   &gt;
                 </button>
               </div>

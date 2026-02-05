@@ -97,6 +97,49 @@ export const PROGRAMS = [
     description: 'Weekend retreat focused on flexibility and mental health.',
     category: 'Wellness',
   },
+  // Additional programs for testing scrolling
+  {
+    id: 5,
+    title: 'Cardio Blast',
+    image: 'https://images.pexels.com/photos/1552242/pexels-photo-1552242.jpeg',
+    description: 'High-intensity cardio sessions for all levels.',
+    category: 'Fitness',
+  },
+  {
+    id: 6,
+    title: 'Pilates Fusion',
+    image: 'https://images.pexels.com/photos/3823039/pexels-photo-3823039.jpeg',
+    description: 'Strengthen your core and improve flexibility.',
+    category: 'Wellness',
+  },
+  {
+    id: 7,
+    title: 'Kids Fitness Camp',
+    image: 'https://images.pexels.com/photos/3661350/pexels-photo-3661350.jpeg',
+    description: 'Fun and active sessions for children ages 7-12.',
+    category: 'Fitness',
+  },
+  {
+    id: 8,
+    title: 'Senior Wellness',
+    image: 'https://images.pexels.com/photos/3861487/pexels-photo-3861487.jpeg',
+    description: 'Gentle classes focused on mobility and health for seniors.',
+    category: 'Wellness',
+  },
+  {
+    id: 9,
+    title: 'Dance Fit',
+    image: 'https://images.pexels.com/photos/1701196/pexels-photo-1701196.jpeg',
+    description: 'Burn calories and have fun with dance-based workouts.',
+    category: 'Fitness',
+  },
+  {
+    id: 10,
+    title: 'Nutrition Seminar',
+    image: 'https://images.pexels.com/photos/3184192/pexels-photo-3184192.jpeg',
+    description: 'Learn about healthy eating and meal planning.',
+    category: 'Wellness',
+  },
 ]
 
 // Membership Plans

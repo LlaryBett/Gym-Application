@@ -9,7 +9,8 @@ import Recovery from './components/Recovery'
 import CTA from './components/CTA'
 import Benefits from './components/Benefits'
 import Trainers from './pages/Trainers'
-import ProgramsEvents from './pages/ProgramsEvents' // <-- updated import
+import ProgramsEvents from './pages/ProgramsEvents'
+import MemberRegistration from './components/MemberRegistration'
 
 
 function App() {
@@ -24,6 +25,7 @@ function App() {
           <Route path="/recovery" element={<Recovery />} />
           <Route path="/membership" element={<Membership />} />
           <Route path="/programs-events" element={<ProgramsEvents />} />
+          <Route path="/register" element={<MemberRegistration />} />
           
           {/* Add more routes as needed */}
         </Routes>

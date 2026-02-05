@@ -1,5 +1,6 @@
 import React, { useState } from 'react'
 import Button from '../components/Button'
+import { Link } from 'react-router-dom'
 
 const Membership = () => {
   const [billingCycle, setBillingCycle] = useState('monthly')
@@ -176,9 +177,11 @@ const Membership = () => {
                   </li>
                 ))}
               </ul>
-              <button className="mt-6 bg-orange-500 text-white px-8 py-3 rounded-full font-semibold hover:bg-orange-600 transition">
-                Join Now
-              </button>
+              <Link to="/register">
+                <button className="mt-6 bg-orange-500 text-white px-8 py-3 rounded-full font-semibold hover:bg-orange-600 transition">
+                  Join Now
+                </button>
+              </Link>
             </div>
 
             {/* Right — FAQ */}
