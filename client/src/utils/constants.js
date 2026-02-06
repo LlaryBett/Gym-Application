@@ -75,6 +75,9 @@ export const PROGRAMS = [
     image: 'https://images.pexels.com/photos/414029/pexels-photo-414029.jpeg',
     description: 'Intense 6-week program to get in shape fast!',
     category: 'Fitness',
+    price: 'Included in Pro+',
+    capacity: '8/12 enrolled',
+    featured: true
   },
   {
     id: 2,
@@ -82,6 +85,9 @@ export const PROGRAMS = [
     image: 'https://images.pexels.com/photos/3757951/pexels-photo-3757951.jpeg',
     description: 'Mindfulness, nutrition, and holistic health guidance.',
     category: 'Wellness',
+    price: 'Included in Pro+',
+    capacity: '15/20 enrolled',
+    featured: true
   },
   {
     id: 3,
@@ -89,6 +95,9 @@ export const PROGRAMS = [
     image: 'https://images.pexels.com/photos/2261485/pexels-photo-2261485.jpeg',
     description: 'Push your limits with our 8-week strength program.',
     category: 'Fitness',
+    price: '$49/month',
+    capacity: '15/20 enrolled',
+    featured: false
   },
   {
     id: 4,
@@ -96,6 +105,9 @@ export const PROGRAMS = [
     image: 'https://images.pexels.com/photos/3823031/pexels-photo-3823031.jpeg',
     description: 'Weekend retreat focused on flexibility and mental health.',
     category: 'Wellness',
+    price: 'Included in Pro+',
+    capacity: '8/12 enrolled',
+    featured: false
   },
   // Additional programs for testing scrolling
   {
@@ -104,6 +116,9 @@ export const PROGRAMS = [
     image: 'https://images.pexels.com/photos/1552242/pexels-photo-1552242.jpeg',
     description: 'High-intensity cardio sessions for all levels.',
     category: 'Fitness',
+    price: 'Included in Pro+',
+    capacity: '8/12 enrolled',
+    featured: false
   },
   {
     id: 6,
@@ -111,6 +126,9 @@ export const PROGRAMS = [
     image: 'https://images.pexels.com/photos/3823039/pexels-photo-3823039.jpeg',
     description: 'Strengthen your core and improve flexibility.',
     category: 'Wellness',
+    price: 'Included in Pro+',
+    capacity: '8/12 enrolled',
+    featured: false
   },
   {
     id: 7,
@@ -118,6 +136,9 @@ export const PROGRAMS = [
     image: 'https://images.pexels.com/photos/3661350/pexels-photo-3661350.jpeg',
     description: 'Fun and active sessions for children ages 7-12.',
     category: 'Fitness',
+    price: 'Included in Pro+',
+    capacity: '8/12 enrolled',
+    featured: false
   },
   {
     id: 8,
@@ -125,6 +146,9 @@ export const PROGRAMS = [
     image: 'https://images.pexels.com/photos/3861487/pexels-photo-3861487.jpeg',
     description: 'Gentle classes focused on mobility and health for seniors.',
     category: 'Wellness',
+    price: 'Included in Pro+',
+    capacity: '8/12 enrolled',
+    featured: false
   },
   {
     id: 9,
@@ -132,6 +156,9 @@ export const PROGRAMS = [
     image: 'https://images.pexels.com/photos/1701196/pexels-photo-1701196.jpeg',
     description: 'Burn calories and have fun with dance-based workouts.',
     category: 'Fitness',
+    price: 'Included in Pro+',
+    capacity: '8/12 enrolled',
+    featured: false
   },
   {
     id: 10,
@@ -139,6 +166,9 @@ export const PROGRAMS = [
     image: 'https://images.pexels.com/photos/3184192/pexels-photo-3184192.jpeg',
     description: 'Learn about healthy eating and meal planning.',
     category: 'Wellness',
+    price: 'Included in Pro+',
+    capacity: '8/12 enrolled',
+    featured: false
   },
 ]
 

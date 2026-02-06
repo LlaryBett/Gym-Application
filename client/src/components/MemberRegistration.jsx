@@ -56,11 +56,11 @@ const MemberRegistration = () => {
   ]
 
   return (
-    <div className="min-h-screen bg-gradient-to-b from-white to-gray-50 py-12">
+    <div className="min-h-screen bg-gradient-to-b from-white to-gray-50 py-6 md:py-12">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         
         {/* Header Section */}
-        <div className="text-center mb-12">
+        <div className="text-center mb-8 md:mb-12">
           <h1 className="text-4xl md:text-5xl font-bold text-orange-500 mb-4">
             Member Registration
           </h1>
@@ -71,7 +71,7 @@ const MemberRegistration = () => {
 
         {/* Main Form */}
         <div className="max-w-4xl mx-auto">
-          <form onSubmit={handleSubmit} className="bg-white rounded-lg shadow-lg p-6 md:p-8">
+          <form onSubmit={handleSubmit} className="bg-white rounded-lg shadow-lg p-4 md:p-8">
             
             {/* Personal Information Section */}
             <div className="mb-10">
@@ -312,7 +312,7 @@ const MemberRegistration = () => {
           </form>
 
           {/* Additional Info Section */}
-          <div className="mt-12 bg-white rounded-lg shadow-lg p-6 md:p-8">
+          <div className="mt-8 md:mt-12 bg-white rounded-lg shadow-lg p-4 md:p-8">
             <div className="grid md:grid-cols-2 gap-8">
               <div>
                 <h3 className="text-xl font-bold text-orange-500 mb-4">

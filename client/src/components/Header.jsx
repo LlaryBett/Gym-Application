@@ -14,20 +14,20 @@ export default function Header() {
   }
 
   return (
-    <header className="sticky top-0 z-50 bg-white relative">
+    <header className="fixed top-0 left-0 right-0 z-50 bg-white">
       <div className="absolute inset-0 bg-gradient-orange opacity-10" />
 
-      <div className="container mx-auto px-4 py-4 relative">
+      <div className="container mx-auto px-4 md:px-16 py-2 md:py-4 relative">
         {/* Desktop Header */}
         <div className="grid grid-cols-3 items-center">
           {/* Logo — Left */}
           <Link
-            className="flex items-center space-x-2 cursor-pointer"
+            className="flex items-center space-x-1 sm:space-x-2 cursor-pointer"
             to="/"
             onClick={() => setIsMenuOpen(false)}
           >
-            <div className="w-10 h-10 bg-orange-500 rounded-full" />
-            <span className="text-2xl font-heading font-bold text-black-900">
+            <div className="w-8 h-8 sm:w-10 sm:h-10 bg-orange-500 rounded-full flex-shrink-0" />
+            <span className="text-lg sm:text-xl md:text-2xl font-heading font-bold text-black-900 whitespace-nowrap">
               Power<span className="text-orange-500">Gym</span>
             </span>
           </Link>
@@ -71,7 +71,7 @@ export default function Header() {
           {/* Mobile Menu Button */}
           <div className="md:hidden justify-self-end">
             <button
-              className="text-black-700"
+              className="text-black-700 p-2"
               onClick={() => setIsMenuOpen(!isMenuOpen)}
               aria-label="Toggle menu"
             >

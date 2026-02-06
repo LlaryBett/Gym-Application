@@ -56,37 +56,37 @@ const ProgramsEvents = () => {
   }
 
   return (
-    <div>
+    <div className="pt-14 md:pt-20">
       {/* ================= HERO / HEADER ================= */}
       
 
       {/* ================= PROGRAMS GRID ================= */}
-      <section className="py-16 bg-white">
-        <div className="max-w-7xl mx-auto px-16">
+      <section className="py-8 md:py-16 bg-white">
+        <div className="max-w-7xl mx-auto px-4 md:px-16">
           {/* Inner Card Container */}
-          <div className="bg-gray-200 rounded-lg shadow-lg p-8 lg:p-12">
+          <div className="bg-gray-200 rounded-lg shadow-lg p-4 md:p-8 lg:p-12">
 
             {/* Header Row */}
-            <div className="flex flex-col lg:flex-row items-center justify-between mb-12 gap-6">
+            <div className="flex flex-col lg:flex-row items-center justify-between mb-8 md:mb-12 gap-4 md:gap-6">
               <div className="flex-shrink-0">
-                <h1 className="text-4xl font-bold text-orange-500">Programs</h1>
+                <h1 className="text-3xl md:text-4xl font-bold text-orange-500">Programs</h1>
               </div>
 
               <div className="flex-1 lg:ml-4">
-                <p className="text-xl md:text-2xl font-semibold text-black">
+                <p className="text-lg md:text-xl lg:text-2xl font-semibold text-black text-center lg:text-left">
                   Explore all our programs
                 </p>
               </div>
 
-              <div className="flex-shrink-0 w-full lg:w-auto text-right">
-                <div className="flex justify-end items-center gap-2 flex-wrap lg:flex-nowrap">
+              <div className="flex-shrink-0 w-full lg:w-auto">
+                <div className="flex flex-row justify-center lg:justify-end items-center gap-2">
 
                   {/* Search Input */}
-                  <div className="relative w-full sm:w-auto">
+                  <div className="relative flex-1 sm:flex-initial min-w-0">
                     <input
                       type="text"
                       placeholder="Search programs..."
-                      className="px-4 py-2 pr-10 rounded-full border border-gray-300 focus:outline-none focus:ring-2 focus:ring-orange-500 w-full sm:w-auto"
+                      className="px-4 py-2 pr-10 rounded-full border border-gray-300 focus:outline-none focus:ring-2 focus:ring-orange-500 w-full text-sm md:text-base"
                     />
                     <FaSearch className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 pointer-events-none" />
                   </div>
@@ -94,7 +94,7 @@ const ProgramsEvents = () => {
                   {/* View All */}
                   <Link
                     to="/programs"
-                    className="bg-black text-white px-4 py-2 rounded-full font-semibold hover:bg-gray-800 transition-colors duration-200"
+                    className="bg-black-900 text-white px-3 sm:px-4 py-2 rounded-full font-semibold hover:bg-black-500 transition-colors duration-200 text-center text-sm md:text-base whitespace-nowrap flex-shrink-0"
                   >
                     View All
                   </Link>
@@ -102,8 +102,47 @@ const ProgramsEvents = () => {
               </div>
             </div>
 
-            {/* Programs Grid */}
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
+            {/* Mobile: Horizontal Scroll */}
+            <div className="lg:hidden overflow-x-auto scrollbar-hide pb-4">
+              <div className="flex gap-4 min-w-max">
+                {visiblePrograms.map(program => (
+                  <div
+                    key={program.id}
+                    className="relative rounded-2xl overflow-hidden shadow-lg group bg-white w-64"
+                  >
+                    <img
+                      src={program.image}
+                      alt={program.title}
+                      className="w-full h-48 object-cover transition-transform duration-300 group-hover:scale-105"
+                    />
+
+                    {/* Hover Overlay with Enroll Button */}
+                    <div className="absolute inset-0 bg-black/50 flex flex-col items-center justify-center text-center px-4 opacity-0 group-hover:opacity-100 transition-opacity duration-300">
+                      <h3 className="text-white text-lg font-bold mb-2">
+                        {program.title}
+                      </h3>
+                      <p className="text-gray-200 text-xs mb-4">{program.description}</p>
+
+                      <Link
+                        to={`/programs/${program.id}`}
+                        className="bg-orange-500 text-white px-4 py-2 rounded-full font-semibold hover:bg-orange-600 transition text-sm"
+                      >
+                        Enroll Now
+                      </Link>
+                    </div>
+
+                    {/* Always visible title */}
+                    <div className="absolute bottom-0 left-0 w-full bg-black/30 text-white text-center py-2 text-xs flex items-center justify-center gap-2">
+                      <FaCalendarAlt />
+                      <span>{program.title}</span>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </div>
+
+            {/* Desktop: Grid Layout */}
+            <div className="hidden lg:grid grid-cols-4 gap-6">
               {visiblePrograms.map(program => (
                 <div
                   key={program.id}
@@ -115,11 +154,19 @@ const ProgramsEvents = () => {
                     className="w-full h-64 object-cover transition-transform duration-300 group-hover:scale-105"
                   />
 
-                  {/* Hover Overlay */}
-                  <div className="absolute inset-0 bg-black/40 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity duration-300">
-                    <h3 className="text-white text-xl font-bold text-center px-2">
+                  {/* Hover Overlay with Enroll Button */}
+                  <div className="absolute inset-0 bg-black/50 flex flex-col items-center justify-center text-center px-4 opacity-0 group-hover:opacity-100 transition-opacity duration-300">
+                    <h3 className="text-white text-xl font-bold mb-2">
                       {program.title}
                     </h3>
+                    <p className="text-gray-200 text-sm mb-4">{program.description}</p>
+
+                    <Link
+                      to={`/programs/${program.id}`}
+                      className="bg-orange-500 text-white px-6 py-2 rounded-full font-semibold hover:bg-orange-600 transition text-base"
+                    >
+                      Enroll Now
+                    </Link>
                   </div>
 
                   {/* Always visible title */}
@@ -132,10 +179,10 @@ const ProgramsEvents = () => {
             </div>
 
             {/* Bottom Row */}
-            <div className="mt-8 flex justify-between items-center">
-              <div className="flex gap-4">
+            <div className="mt-6 md:mt-8 flex flex-col sm:flex-row justify-between items-center gap-4">
+              <div className="flex gap-3 md:gap-4">
                 <button
-                  className="bg-white text-black px-4 py-2 rounded-full font-semibold shadow hover:bg-gray-100 transition"
+                  className="bg-white text-black px-3 md:px-4 py-2 rounded-full font-semibold shadow hover:bg-gray-100 transition text-sm md:text-base"
                   onClick={handlePrev}
                   disabled={programIndex === 0}
                   aria-label="Previous"
@@ -143,7 +190,7 @@ const ProgramsEvents = () => {
                   &lt;
                 </button>
                 <button
-                  className="bg-white text-black px-4 py-2 rounded-full font-semibold shadow hover:bg-gray-100 transition"
+                  className="bg-white text-black px-3 md:px-4 py-2 rounded-full font-semibold shadow hover:bg-gray-100 transition text-sm md:text-base"
                   onClick={handleNext}
                   disabled={programIndex >= maxIndex}
                   aria-label="Next"
@@ -152,7 +199,7 @@ const ProgramsEvents = () => {
                 </button>
               </div>
 
-              <p className="max-w-md text-right text-gray-700 text-lg">
+              <p className="max-w-md text-center sm:text-right text-gray-700 text-sm md:text-lg">
                 Our programs include personal coaching, group workouts, wellness events, and recovery sessions.
               </p>
             </div>
@@ -161,71 +208,71 @@ const ProgramsEvents = () => {
       </section>
 
       {/* ================= CLASS SCHEDULE ================= */}
-<section className="py-16 bg-gray-50" id="class-schedule">
-  <div className="max-w-6xl mx-auto px-4">
-    <h2 className="text-3xl font-bold text-center mb-10">
-      Class <span className="text-orange-500">Schedule</span>
-    </h2>
+      <section className="py-8 md:py-16 bg-gray-50" id="class-schedule">
+        <div className="max-w-6xl mx-auto px-4">
+          <h2 className="text-2xl md:text-3xl font-bold text-center mb-8 md:mb-10">
+            Class <span className="text-orange-500">Schedule</span>
+          </h2>
 
-    <div className="flex flex-col lg:flex-row gap-8">
-      
-      {/* Left — Video */}
-      <div className="lg:w-1/2 flex justify-center items-center">
-        <div className="w-full h-64 lg:h-[400px] bg-gray-300 rounded-xl overflow-hidden flex justify-center items-center">
-          <video
-            src="/videos/class-preview.mp4"
-            controls
-            className="w-full h-full object-cover"
-          >
-            Your browser does not support the video tag.
-          </video>
-        </div>
-      </div>
-
-      {/* Right — Timetable */}
-      <div className="lg:w-1/2 flex flex-col">
-        {/* Day Toggle */}
-        <div className="flex gap-2 mb-6 bg-white p-2 rounded-full border shadow-sm">
-          {DAYS.map(day => (
-            <button
-              key={day}
-              onClick={() => setActiveDay(day)}
-              className={`flex-1 py-2 rounded-full text-sm font-semibold transition
-                ${activeDay === day
-                  ? 'bg-black text-white'
-                  : 'text-gray-600 hover:bg-gray-100'}`}
-            >
-              {day}
-            </button>
-          ))}
-        </div>
-
-        {/* Timetable */}
-        <div className="bg-white rounded-xl border shadow-sm divide-y flex flex-col">
-          {SCHEDULE[activeDay]?.map((item, idx) => (
-            <div
-              key={idx}
-              className="flex items-center justify-between px-6 py-4"
-            >
-              <span className="text-gray-500 font-medium">{item.time}</span>
-              <span className="font-semibold text-gray-800">{item.name}</span>
-              <button className="bg-black text-white px-4 py-1.5 rounded-full text-sm font-semibold hover:bg-gray-800 transition">
-                Book
-              </button>
+          <div className="flex flex-col lg:flex-row gap-6 md:gap-8">
+            
+            {/* Left — Video */}
+            <div className="lg:w-1/2 flex justify-center items-center">
+              <div className="w-full h-48 sm:h-64 lg:h-[400px] bg-gray-300 rounded-xl overflow-hidden flex justify-center items-center">
+                <video
+                  src="/videos/class-preview.mp4"
+                  controls
+                  className="w-full h-full object-cover"
+                >
+                  Your browser does not support the video tag.
+                </video>
+              </div>
             </div>
-          ))}
 
-          {SCHEDULE[activeDay]?.length === 0 && (
-            <div className="px-6 py-8 text-center text-gray-500">
-              No classes scheduled
+            {/* Right — Timetable */}
+            <div className="lg:w-1/2 flex flex-col">
+              {/* Day Toggle */}
+              <div className="flex gap-1 md:gap-2 mb-4 md:mb-6 bg-white p-1 md:p-2 rounded-full border shadow-sm overflow-x-auto">
+                {DAYS.map(day => (
+                  <button
+                    key={day}
+                    onClick={() => setActiveDay(day)}
+                    className={`flex-1 py-2 rounded-full text-xs md:text-sm font-semibold transition whitespace-nowrap
+                      ${activeDay === day
+                        ? 'bg-black text-white'
+                        : 'text-gray-600 hover:bg-gray-100'}`}
+                  >
+                    {day}
+                  </button>
+                ))}
+              </div>
+
+              {/* Timetable */}
+              <div className="bg-white rounded-xl border shadow-sm divide-y flex flex-col">
+                {SCHEDULE[activeDay]?.map((item, idx) => (
+                  <div
+                    key={idx}
+                    className="flex flex-col sm:flex-row items-start sm:items-center justify-between px-4 md:px-6 py-3 md:py-4 gap-2 sm:gap-0"
+                  >
+                    <span className="text-gray-500 font-medium text-xs md:text-sm">{item.time}</span>
+                    <span className="font-semibold text-gray-800 text-sm md:text-base">{item.name}</span>
+                    <button className="bg-black text-white px-3 md:px-4 py-1.5 rounded-full text-xs md:text-sm font-semibold hover:bg-gray-800 transition">
+                      Book
+                    </button>
+                  </div>
+                ))}
+
+                {SCHEDULE[activeDay]?.length === 0 && (
+                  <div className="px-4 md:px-6 py-6 md:py-8 text-center text-gray-500 text-sm md:text-base">
+                    No classes scheduled
+                  </div>
+                )}
+              </div>
             </div>
-          )}
-        </div>
-      </div>
 
-    </div>
-  </div>
-</section>
+          </div>
+        </div>
+      </section>
 
 
       <CTA />

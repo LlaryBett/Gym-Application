@@ -34,3 +34,29 @@
     @apply bg-white rounded-xl shadow-md p-6 border border-black-200;  /* Changed black to black-200 */
   }
 }
+
+@keyframes scroll-mobile {
+  0% {
+    transform: translateX(0);
+  }
+  100% {
+    transform: translateX(-50%);
+  }
+}
+
+.animate-scroll-mobile {
+  animation: scroll-mobile 20s linear infinite;
+}
+
+.animate-scroll-mobile:hover {
+  animation-play-state: paused;
+}
+
+.scrollbar-hide {
+  -ms-overflow-style: none;
+  scrollbar-width: none;
+}
+
+.scrollbar-hide::-webkit-scrollbar {
+  display: none;
+}
