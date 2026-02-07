@@ -3,6 +3,7 @@ import {
   FaFacebookF,
   FaXTwitter,
   FaInstagram,
+  FaThreads,
   FaPhone,
   FaEnvelope,
   FaLocationDot,
@@ -99,6 +100,9 @@ const Footer = () => {
               </a>
               <a href="#" className="hover:text-orange-500 transition">
                 <FaInstagram />
+              </a>
+              <a href="#" className="hover:text-orange-500 transition">
+                <FaThreads />
               </a>
             </div>
           </div>
