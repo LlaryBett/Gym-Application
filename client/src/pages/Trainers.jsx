@@ -532,13 +532,13 @@ export default function Trainers() {
             </div>
             <div className="flex gap-3">
               <button 
-                className="flex-1 bg-black text-white px-4 py-3 rounded-lg font-semibold bg-gray-800 hover:bg-gray-700 transition"
+                className="flex-1 bg-black text-white px-4 py-3 rounded-full font-semibold bg-gray-800 hover:bg-gray-700 transition"
                 onClick={() => window.location.href = `mailto:${selectedTrainer.email}?subject=Book Training Session`}
               >
                 Book Session
               </button>
               <button 
-                className="flex-1 border-2 border-gray-300 text-gray-700 px-4 py-3 rounded-lg font-semibold hover:bg-gray-100 transition"
+                className="flex-1 border-2 border-gray-300 text-gray-700 px-4 py-3 rounded-full font-semibold hover:bg-gray-100 transition"
                 onClick={() => setSelectedTrainer(null)}
               >
                 Close
