@@ -476,73 +476,76 @@ export default function Trainers() {
           onClick={() => setSelectedTrainer(null)}
         >
           <div 
-            className="bg-white rounded-xl p-6 max-w-md w-full"
+            className="bg-white rounded-xl p-6 max-w-md w-full relative"
             onClick={(e) => e.stopPropagation()}
           >
-            <h2 className="text-2xl font-bold text-black-900 mb-2">{selectedTrainer.name}</h2>
-            <p className="text-orange-500 font-semibold mb-4">{selectedTrainer.specialty}</p>
-            <p className="text-gray-600 mb-4">{selectedTrainer.bio}</p>
-            
-            {/* Social Links in Modal */}
-            <div className="mb-4">
-              <p className="text-sm font-semibold text-black-900 mb-2">Connect:</p>
+            <div className="absolute inset-0 bg-gradient-orange opacity-10 rounded-xl" />
+            <div className="relative">
+              <h2 className="text-2xl font-bold text-black-900 mb-2">{selectedTrainer.name}</h2>
+              <p className="text-orange-500 font-semibold mb-4">{selectedTrainer.specialty}</p>
+              <p className="text-gray-600 mb-4">{selectedTrainer.bio}</p>
+              
+              {/* Social Links in Modal */}
+              <div className="mb-4">
+                <p className="text-sm font-semibold text-black-900 mb-2">Connect:</p>
+                <div className="flex gap-3">
+                  {selectedTrainer.socials.instagram && (
+                    <a href={selectedTrainer.socials.instagram} target="_blank" rel="noopener noreferrer" 
+                       className="text-orange-500 hover:text-orange-600 transition">
+                      <FaInstagram size={24} />
+                    </a>
+                  )}
+                  {selectedTrainer.socials.x && (
+                    <a href={selectedTrainer.socials.x} target="_blank" rel="noopener noreferrer" 
+                       className="text-orange-500 hover:text-orange-600 transition">
+                      <FaXTwitter size={24} />
+                    </a>
+                  )}
+                  {selectedTrainer.socials.linkedin && (
+                    <a href={selectedTrainer.socials.linkedin} target="_blank" rel="noopener noreferrer" 
+                       className="text-orange-500 hover:text-orange-600 transition">
+                      <FaLinkedin size={24} />
+                    </a>
+                  )}
+                  {selectedTrainer.socials.facebook && (
+                    <a href={selectedTrainer.socials.facebook} target="_blank" rel="noopener noreferrer" 
+                       className="text-orange-500 hover:text-orange-600 transition">
+                      <FaFacebookF size={24} />
+                    </a>
+                  )}
+                  {selectedTrainer.socials.whatsapp && (
+                    <a href={`https://wa.me/${selectedTrainer.socials.whatsapp.replace(/\+/g, '')}`} target="_blank" rel="noopener noreferrer" 
+                       className="text-orange-500 hover:text-orange-600 transition">
+                      <FaWhatsapp size={24} />
+                    </a>
+                  )}
+                </div>
+              </div>
+              
+              <div className="mb-4">
+                <p className="text-sm font-semibold text-black-900 mb-2">Certifications:</p>
+                <div className="flex flex-wrap gap-2">
+                  {selectedTrainer.certifications.map((cert, idx) => (
+                    <span key={idx} className="bg-orange-100 text-orange-600 px-3 py-1 rounded-full text-xs font-semibold">
+                      {cert}
+                    </span>
+                  ))}
+                </div>
+              </div>
               <div className="flex gap-3">
-                {selectedTrainer.socials.instagram && (
-                  <a href={selectedTrainer.socials.instagram} target="_blank" rel="noopener noreferrer" 
-                     className="text-orange-500 hover:text-orange-600 transition">
-                    <FaInstagram size={24} />
-                  </a>
-                )}
-                {selectedTrainer.socials.x && (
-                  <a href={selectedTrainer.socials.x} target="_blank" rel="noopener noreferrer" 
-                     className="text-orange-500 hover:text-orange-600 transition">
-                    <FaXTwitter size={24} />
-                  </a>
-                )}
-                {selectedTrainer.socials.linkedin && (
-                  <a href={selectedTrainer.socials.linkedin} target="_blank" rel="noopener noreferrer" 
-                     className="text-orange-500 hover:text-orange-600 transition">
-                    <FaLinkedin size={24} />
-                  </a>
-                )}
-                {selectedTrainer.socials.facebook && (
-                  <a href={selectedTrainer.socials.facebook} target="_blank" rel="noopener noreferrer" 
-                     className="text-orange-500 hover:text-orange-600 transition">
-                    <FaFacebookF size={24} />
-                  </a>
-                )}
-                {selectedTrainer.socials.whatsapp && (
-                  <a href={`https://wa.me/${selectedTrainer.socials.whatsapp.replace(/\+/g, '')}`} target="_blank" rel="noopener noreferrer" 
-                     className="text-orange-500 hover:text-orange-600 transition">
-                    <FaWhatsapp size={24} />
-                  </a>
-                )}
+                <button 
+                  className="flex-1 bg-black text-white px-4 py-3 rounded-full font-semibold bg-gray-800 hover:bg-gray-700 transition"
+                  onClick={() => window.location.href = `mailto:${selectedTrainer.email}?subject=Book Training Session`}
+                >
+                  Book Session
+                </button>
+                <button 
+                  className="flex-1 border-2 border-gray-300 text-gray-700 px-4 py-3 rounded-full font-semibold hover:bg-gray-100 transition"
+                  onClick={() => setSelectedTrainer(null)}
+                >
+                  Close
+                </button>
               </div>
-            </div>
-            
-            <div className="mb-4">
-              <p className="text-sm font-semibold text-black-900 mb-2">Certifications:</p>
-              <div className="flex flex-wrap gap-2">
-                {selectedTrainer.certifications.map((cert, idx) => (
-                  <span key={idx} className="bg-orange-100 text-orange-600 px-3 py-1 rounded-full text-xs font-semibold">
-                    {cert}
-                  </span>
-                ))}
-              </div>
-            </div>
-            <div className="flex gap-3">
-              <button 
-                className="flex-1 bg-black text-white px-4 py-3 rounded-full font-semibold bg-gray-800 hover:bg-gray-700 transition"
-                onClick={() => window.location.href = `mailto:${selectedTrainer.email}?subject=Book Training Session`}
-              >
-                Book Session
-              </button>
-              <button 
-                className="flex-1 border-2 border-gray-300 text-gray-700 px-4 py-3 rounded-full font-semibold hover:bg-gray-100 transition"
-                onClick={() => setSelectedTrainer(null)}
-              >
-                Close
-              </button>
             </div>
           </div>
         </div>
