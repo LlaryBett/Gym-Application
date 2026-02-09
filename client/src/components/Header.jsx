@@ -19,7 +19,7 @@ export default function Header() {
 
       <div className="container mx-auto px-4 md:px-16 py-2 md:py-4 relative">
         {/* Desktop Header */}
-        <div className="grid grid-cols-3 items-center">
+        <div className="flex md:grid md:grid-cols-3 items-center justify-between">
           {/* Logo — Left */}
           <Link
             className="flex items-center space-x-1 sm:space-x-2 cursor-pointer"
@@ -69,7 +69,7 @@ export default function Header() {
           </div>
 
           {/* Mobile Menu Button */}
-          <div className="md:hidden justify-self-end">
+          <div className="md:hidden">
             <button
               className="text-black-700 p-2"
               onClick={() => setIsMenuOpen(!isMenuOpen)}
@@ -115,8 +115,8 @@ export default function Header() {
             ))}
 
             {/* Mobile CTAs */}
-            <div className="pt-3 space-y-3">
-              <Link to="/services" tabIndex={-1} onClick={() => setIsMenuOpen(false)}>
+            <div className="pt-3 flex gap-3">
+              <Link to="/services" tabIndex={-1} onClick={() => setIsMenuOpen(false)} className="flex-1">
                 <Button
                   variant="outline"
                   fullWidth
@@ -124,7 +124,7 @@ export default function Header() {
                   View Classes
                 </Button>
               </Link>
-              <Link to="/membership" tabIndex={-1} onClick={() => setIsMenuOpen(false)}>
+              <Link to="/membership" tabIndex={-1} onClick={() => setIsMenuOpen(false)} className="flex-1">
                 <Button
                   variant="accent"
                   fullWidth

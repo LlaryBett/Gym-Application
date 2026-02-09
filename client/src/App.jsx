@@ -16,7 +16,7 @@ import ProgramDetail from './pages/ProgramDetail'
 
 function App() {
   return (
-    <div className="App pt-16 md:pt-20">
+    <div className="App pt-12 md:pt-20">
       {/* Header */}
       <Header />
       
