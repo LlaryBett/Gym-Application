@@ -469,6 +469,8 @@ export default function Trainers() {
       {/* CTA Component - Outside container to maintain full-width design */}
       <CTA />
 
+      {/* Before */}
+
       {/* Simple Booking Modal */}
       {selectedTrainer && (
         <div 
