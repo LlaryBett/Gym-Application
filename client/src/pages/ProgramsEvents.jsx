@@ -1,65 +1,110 @@
-import { useState } from 'react'
-import { PROGRAMS } from '../utils/constants'
-import { FaCalendarAlt, FaSearch } from 'react-icons/fa'
-import { Link } from 'react-router-dom'
-import CTA from '../components/CTA'
+import React, { useState, useEffect } from 'react';
+import { FaCalendarAlt, FaSearch } from 'react-icons/fa';
+import { Link } from 'react-router-dom';
+import CTA from '../components/CTA';
+import { programService } from '../services/programService';
 
-const DAYS = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun']
-
-const SCHEDULE = {
-  Mon: [
-    { time: '06:00 - 07:00', name: 'Morning Strength' },
-    { time: '09:00 - 10:00', name: 'HIIT' },
-    { time: '18:00 - 19:00', name: 'Yoga Flow' },
-  ],
-  Tue: [
-    { time: '07:00 - 08:00', name: 'Group Training' },
-    { time: '12:00 - 13:00', name: 'Core Blast' },
-    { time: '18:30 - 19:30', name: 'Stretch & Mobility' },
-  ],
-  Wed: [
-    { time: '06:30 - 07:30', name: 'Strength & Conditioning' },
-    { time: '17:00 - 18:00', name: 'HIIT' },
-  ],
-  Thu: [
-    { time: '07:00 - 08:00', name: 'Bootcamp' },
-    { time: '18:00 - 19:00', name: 'Upper Body' },
-  ],
-  Fri: [
-    { time: '06:00 - 07:00', name: 'Full Body Burn' },
-    { time: '17:30 - 18:30', name: 'Cardio' },
-  ],
-  Sat: [
-    { time: '09:00 - 10:00', name: 'Bootcamp' },
-    { time: '11:00 - 12:00', name: 'Core Training' },
-  ],
-  Sun: [
-    { time: '10:00 - 11:00', name: 'Yoga & Recovery' },
-  ],
-}
+const DAYS = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'];
 
 const ProgramsEvents = () => {
-  const [activeDay, setActiveDay] = useState('Mon')
-  const [programIndex, setProgramIndex] = useState(0)
-  const programsPerPage = 4
+  const [activeDay, setActiveDay] = useState('Mon');
+  const [programs, setPrograms] = useState([]);
+  const [schedules, setSchedules] = useState({});
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(null);
+  const [programIndex, setProgramIndex] = useState(0);
+  
+  const programsPerPage = 4;
+  const totalPrograms = programs.length;
+  const maxIndex = Math.max(0, totalPrograms - programsPerPage);
+  const visiblePrograms = programs.slice(programIndex, programIndex + programsPerPage);
 
-  const totalPrograms = PROGRAMS.length
-  const maxIndex = Math.max(0, totalPrograms - programsPerPage)
-  const visiblePrograms = PROGRAMS.slice(programIndex, programIndex + programsPerPage)
+  useEffect(() => {
+    fetchData();
+  }, []);
+
+  const fetchData = async () => {
+    try {
+      setLoading(true);
+      
+      const [programsRes, schedulesRes] = await Promise.all([
+        programService.getAllPrograms({ page: 1, limit: 8 }),
+        programService.getAllSchedules()
+      ]);
+      
+      if (programsRes.success) {
+        const formattedPrograms = programsRes.data.programs.map(p => 
+          programService.formatProgramForDisplay(p)
+        );
+        setPrograms(formattedPrograms);
+      }
+      
+      if (schedulesRes.success) {
+        setSchedules(schedulesRes.data);
+      }
+      
+    } catch (err) {
+      console.error('Failed to fetch data:', err);
+      setError('Failed to load programs. Please try again.');
+    } finally {
+      setLoading(false);
+    }
+  };
 
   const handlePrev = () => {
-    setProgramIndex((prev) => Math.max(0, prev - programsPerPage))
-  }
+    setProgramIndex((prev) => Math.max(0, prev - programsPerPage));
+  };
 
   const handleNext = () => {
-    setProgramIndex((prev) => Math.min(maxIndex, prev + programsPerPage))
+    setProgramIndex((prev) => Math.min(maxIndex, prev + programsPerPage));
+  };
+
+  const getDaySchedule = (day) => {
+    if (!schedules || !schedules[day]) return [];
+    return schedules[day].map(s => ({
+      time: `${s.start_time?.substring(0,5)} - ${s.end_time?.substring(0,5)}`,
+      name: s.class_name,
+      id: s.program_id
+    }));
+  };
+
+  if (loading) {
+    return (
+      <div className="pt-14 md:pt-20">
+        <div className="max-w-7xl mx-auto px-4 md:px-16 py-16">
+          <div className="flex justify-center items-center min-h-[400px]">
+            <div className="text-center">
+              <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-orange-500 mx-auto mb-4"></div>
+              <p className="text-gray-600">Loading programs...</p>
+            </div>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  if (error) {
+    return (
+      <div className="pt-14 md:pt-20">
+        <div className="max-w-7xl mx-auto px-4 md:px-16 py-16">
+          <div className="text-center py-12">
+            <div className="text-red-500 text-4xl mb-4">⚠️</div>
+            <h3 className="text-xl font-bold text-gray-800 mb-2">Unable to load programs</h3>
+            <p className="text-gray-600 mb-4">{error}</p>
+            <button 
+              onClick={fetchData}
+              className="bg-orange-500 text-white px-6 py-2 rounded-lg font-semibold hover:bg-orange-600 transition"
+            >
+              Retry
+            </button>
+          </div>
+        </div>
+      </div>
+    );
   }
 
   return (
     <div className="pt-14 md:pt-20">
-      {/* ================= HERO / HEADER ================= */}
-      
-
       {/* ================= PROGRAMS GRID ================= */}
       <section className="py-8 md:py-16 bg-white">
         <div className="max-w-7xl mx-auto px-4 md:px-16">
@@ -80,8 +125,6 @@ const ProgramsEvents = () => {
 
               <div className="flex-shrink-0 w-full lg:w-auto">
                 <div className="flex flex-row justify-center lg:justify-end items-center gap-2">
-
-                  {/* Search Input */}
                   <div className="relative flex-1 sm:flex-initial min-w-0">
                     <input
                       type="text"
@@ -90,8 +133,6 @@ const ProgramsEvents = () => {
                     />
                     <FaSearch className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 pointer-events-none" />
                   </div>
-
-                  {/* View All */}
                   <Link
                     to="/programs"
                     className="bg-black-900 text-white px-3 sm:px-4 py-2 rounded-full font-semibold hover:bg-black-500 transition-colors duration-200 text-center text-sm md:text-base whitespace-nowrap flex-shrink-0"
@@ -115,23 +156,18 @@ const ProgramsEvents = () => {
                       alt={program.title}
                       className="w-full h-48 object-cover transition-transform duration-300 group-hover:scale-105"
                     />
-
-                    {/* Hover Overlay with Enroll Button */}
                     <div className="absolute inset-0 bg-black/50 flex flex-col items-center justify-center text-center px-4 opacity-0 group-hover:opacity-100 transition-opacity duration-300">
                       <h3 className="text-white text-lg font-bold mb-2">
                         {program.title}
                       </h3>
                       <p className="text-gray-200 text-xs mb-4">{program.description}</p>
-
                       <Link
                         to={`/programs/${program.id}`}
                         className="bg-orange-500 text-white px-4 py-2 rounded-full font-semibold hover:bg-orange-600 transition text-sm"
                       >
-                        Enroll Now
+                        View Details
                       </Link>
                     </div>
-
-                    {/* Always visible title */}
                     <div className="absolute bottom-0 left-0 w-full bg-black/30 text-white text-center py-2 text-xs flex items-center justify-center gap-2">
                       <FaCalendarAlt />
                       <span>{program.title}</span>
@@ -153,23 +189,18 @@ const ProgramsEvents = () => {
                     alt={program.title}
                     className="w-full h-64 object-cover transition-transform duration-300 group-hover:scale-105"
                   />
-
-                  {/* Hover Overlay with Enroll Button */}
                   <div className="absolute inset-0 bg-black/50 flex flex-col items-center justify-center text-center px-4 opacity-0 group-hover:opacity-100 transition-opacity duration-300">
                     <h3 className="text-white text-xl font-bold mb-2">
                       {program.title}
                     </h3>
                     <p className="text-gray-200 text-sm mb-4">{program.description}</p>
-
                     <Link
                       to={`/programs/${program.id}`}
                       className="bg-orange-500 text-white px-6 py-2 rounded-full font-semibold hover:bg-orange-600 transition text-base"
                     >
-                      Enroll Now
+                      View Details
                     </Link>
                   </div>
-
-                  {/* Always visible title */}
                   <div className="absolute bottom-0 left-0 w-full bg-black/30 text-white text-center py-2 text-sm flex items-center justify-center gap-2">
                     <FaCalendarAlt />
                     <span>{program.title}</span>
@@ -182,7 +213,7 @@ const ProgramsEvents = () => {
             <div className="mt-6 md:mt-8 flex flex-col sm:flex-row justify-between items-center gap-4">
               <div className="flex gap-3 md:gap-4">
                 <button
-                  className="bg-white text-black px-3 md:px-4 py-2 rounded-full font-semibold shadow hover:bg-gray-100 transition text-sm md:text-base"
+                  className="bg-white text-black px-3 md:px-4 py-2 rounded-full font-semibold shadow hover:bg-gray-100 transition text-sm md:text-base disabled:opacity-50 disabled:cursor-not-allowed"
                   onClick={handlePrev}
                   disabled={programIndex === 0}
                   aria-label="Previous"
@@ -190,7 +221,7 @@ const ProgramsEvents = () => {
                   &lt;
                 </button>
                 <button
-                  className="bg-white text-black px-3 md:px-4 py-2 rounded-full font-semibold shadow hover:bg-gray-100 transition text-sm md:text-base"
+                  className="bg-white text-black px-3 md:px-4 py-2 rounded-full font-semibold shadow hover:bg-gray-100 transition text-sm md:text-base disabled:opacity-50 disabled:cursor-not-allowed"
                   onClick={handleNext}
                   disabled={programIndex >= maxIndex}
                   aria-label="Next"
@@ -198,7 +229,6 @@ const ProgramsEvents = () => {
                   &gt;
                 </button>
               </div>
-
               <p className="max-w-md text-center sm:text-right text-gray-700 text-sm md:text-lg">
                 Our programs include personal coaching, group workouts, wellness events, and recovery sessions.
               </p>
@@ -249,22 +279,25 @@ const ProgramsEvents = () => {
 
               {/* Timetable */}
               <div className="bg-white rounded-xl border shadow-sm divide-y flex flex-col">
-                {SCHEDULE[activeDay]?.map((item, idx) => (
-                  <div
-                    key={idx}
-                    className="flex flex-col sm:flex-row items-start sm:items-center justify-between px-4 md:px-6 py-3 md:py-4 gap-2 sm:gap-0"
-                  >
-                    <span className="text-gray-500 font-medium text-xs md:text-sm">{item.time}</span>
-                    <span className="font-semibold text-gray-800 text-sm md:text-base">{item.name}</span>
-                    <button className="bg-black text-white px-3 md:px-4 py-1.5 rounded-full text-xs md:text-sm font-semibold hover:bg-gray-800 transition">
-                      Book
-                    </button>
-                  </div>
-                ))}
-
-                {SCHEDULE[activeDay]?.length === 0 && (
+                {getDaySchedule(activeDay).length > 0 ? (
+                  getDaySchedule(activeDay).map((item, idx) => (
+                    <div
+                      key={idx}
+                      className="flex flex-col sm:flex-row items-start sm:items-center justify-between px-4 md:px-6 py-3 md:py-4 gap-2 sm:gap-0"
+                    >
+                      <span className="text-gray-500 font-medium text-xs md:text-sm">{item.time}</span>
+                      <span className="font-semibold text-gray-800 text-sm md:text-base">{item.name}</span>
+                      <Link
+                        to={`/programs/${item.id}`}
+                        className="bg-black text-white px-3 md:px-4 py-1.5 rounded-full text-xs md:text-sm font-semibold hover:bg-gray-800 transition"
+                      >
+                        View Details
+                      </Link>
+                    </div>
+                  ))
+                ) : (
                   <div className="px-4 md:px-6 py-6 md:py-8 text-center text-gray-500 text-sm md:text-base">
-                    No classes scheduled
+                    No classes scheduled for {activeDay}
                   </div>
                 )}
               </div>
@@ -274,10 +307,9 @@ const ProgramsEvents = () => {
         </div>
       </section>
 
-
       <CTA />
     </div>
-  )
-}
+  );
+};
 
-export default ProgramsEvents
+export default ProgramsEvents;

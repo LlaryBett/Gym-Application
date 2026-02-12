@@ -1,16 +1,37 @@
 import { useState } from 'react'
 import { NAV_LINKS } from '../utils/constants'
 import Button from './Button'
-import { Link, useLocation } from 'react-router-dom'
+import { Link, useLocation, useNavigate } from 'react-router-dom'
+import { useAuth } from '../hooks/authHooks'
 
 export default function Header() {
   const [isMenuOpen, setIsMenuOpen] = useState(false)
+  const [showDropdown, setShowDropdown] = useState(false)
   const location = useLocation()
+  const navigate = useNavigate()
+  const { isAuthenticated, user, logout } = useAuth()
 
   const getActive = (path) => {
     // Remove hash if present and compare with current pathname
     const cleanPath = path.replace('#', '')
     return location.pathname === (cleanPath.startsWith('/') ? cleanPath : `/${cleanPath}`)
+  }
+
+  // Get user initials from name
+  const getUserInitials = () => {
+    if (!user?.name) return 'U'
+    const names = user.name.split(' ')
+    if (names.length >= 2) {
+      return `${names[0][0]}${names[1][0]}`.toUpperCase()
+    }
+    return names[0][0].toUpperCase()
+  }
+
+  const handleLogout = () => {
+    logout()
+    setShowDropdown(false)
+    setIsMenuOpen(false)
+    navigate('/')
   }
 
   return (
@@ -59,13 +80,59 @@ export default function Header() {
                 View Classes
               </Button>
             </Link>
-            <Link to="/membership" tabIndex={-1}>
-              <Button
-                variant="accent"
+            
+            {isAuthenticated ? (
+              <div 
+                className="relative"
+                onMouseEnter={() => setShowDropdown(true)}
+                onMouseLeave={() => setShowDropdown(false)}
               >
-                Join Now
-              </Button>
-            </Link>
+                <button
+                  onClick={() => setShowDropdown(!showDropdown)}
+                  className="w-10 h-10 rounded-full bg-orange-500 text-white font-bold flex items-center justify-center hover:bg-orange-600 transition"
+                >
+                  {getUserInitials()}
+                </button>
+                
+                {/* Dropdown Menu */}
+                {showDropdown && (
+                  <div className="absolute right-0 mt-2 w-48 bg-white rounded-lg shadow-lg py-2 z-50 border border-gray-100">
+                    <div className="px-4 py-2 border-b border-gray-100">
+                      <p className="font-semibold text-gray-900 text-sm">{user?.name}</p>
+                      <p className="text-xs text-gray-500">{user?.email}</p>
+                    </div>
+                    <Link
+                      to="/dashboard"
+                      className="block px-4 py-2 text-gray-700 hover:bg-gray-100 transition text-sm"
+                      onClick={() => setShowDropdown(false)}
+                    >
+                      Dashboard
+                    </Link>
+                    <Link
+                      to="/profile"
+                      className="block px-4 py-2 text-gray-700 hover:bg-gray-100 transition text-sm"
+                      onClick={() => setShowDropdown(false)}
+                    >
+                      Profile
+                    </Link>
+                    <button
+                      onClick={handleLogout}
+                      className="w-full text-left px-4 py-2 text-red-600 hover:bg-gray-100 transition text-sm"
+                    >
+                      Logout
+                    </button>
+                  </div>
+                )}
+              </div>
+            ) : (
+              <Link to="/register" tabIndex={-1}>
+                <Button
+                  variant="accent"
+                >
+                  Join Now
+                </Button>
+              </Link>
+            )}
           </div>
 
           {/* Mobile Menu Button */}
@@ -124,14 +191,29 @@ export default function Header() {
                   View Classes
                 </Button>
               </Link>
-              <Link to="/membership" tabIndex={-1} onClick={() => setIsMenuOpen(false)} className="flex-1">
-                <Button
-                  variant="accent"
-                  fullWidth
-                >
-                  Join Now
-                </Button>
-              </Link>
+              
+              {isAuthenticated ? (
+                <div className="flex-1 flex items-center justify-center gap-2">
+                  <div className="w-10 h-10 rounded-full bg-orange-500 text-white font-bold flex items-center justify-center">
+                    {getUserInitials()}
+                  </div>
+                  <button
+                    onClick={handleLogout}
+                    className="text-red-600 font-medium text-sm"
+                  >
+                    Logout
+                  </button>
+                </div>
+              ) : (
+                <Link to="/register" tabIndex={-1} onClick={() => setIsMenuOpen(false)} className="flex-1">
+                  <Button
+                    variant="accent"
+                    fullWidth
+                  >
+                    Join Now
+                  </Button>
+                </Link>
+              )}
             </div>
           </nav>
         )}

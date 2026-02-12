@@ -1,120 +1,16 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import CTA from '../components/CTA';
 import { FaInstagram, FaLinkedin, FaFacebookF, FaXTwitter, FaWhatsapp, FaChevronDown, FaChevronUp } from 'react-icons/fa6';
+import trainersService from '../services/trainersService';
+import { useAuth } from '../hooks/authHooks';
 
 export default function Trainers() {
+  const [trainers, setTrainers] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(null);
   const [selectedTrainer, setSelectedTrainer] = useState(null);
   const [openFaq, setOpenFaq] = useState(null);
-
-  const TRAINERS = [
-    {
-      id: 1,
-      name: "John Doe",
-      specialty: "Strength Training",
-      image: "https://images.squarespace-cdn.com/content/v1/659ed09318cd077ef91b5f21/9b25bb97-2a13-4436-9568-714e36484c20/WhatsApp+Image+2024-11-04+at+12.13.46+PM.jpeg",
-      bio: "10+ years experience in strength and conditioning",
-      certifications: ["NASM-CPT", "CSCS"],
-      email: "john@powergym.com",
-      phone: "+1234567890",
-      socials: {
-        instagram: "https://instagram.com/johndoe",
-        linkedin: "https://linkedin.com/in/johndoe",
-        facebook: "https://facebook.com/johndoe",
-        x: "https://x.com/johndoe",
-        whatsapp: "+1234567890"
-      },
-      featured: false,
-      size: "regular"
-    },
-    {
-      id: 2,
-      name: "Jane Smith",
-      specialty: "Cardio & HIIT",
-      image: "https://savannahfitnessexchange.com/wp-content/uploads/2019/04/Screenshot_20221130-152316_Gallery-360x460.jpg",
-      bio: "Specialized in high-intensity interval training",
-      certifications: ["ACE", "TRX"],
-      email: "jane@powergym.com",
-      phone: "+1234567891",
-      socials: {
-        instagram: "https://instagram.com/janesmith",
-        x: "https://x.com/janesmith",
-        whatsapp: "+1234567891"
-      },
-      featured: false,
-      size: "regular"
-    },
-    {
-      id: 3,
-      name: "Mike Johnson",
-      specialty: "Yoga & Flexibility",
-      image: "https://img.freepik.com/premium-photo/gym-membership-personal-trainer-black-man-holding-sign-up-clipboard-heath-wellness-subscription-healthy-lifestyle-portrait-happy-male-coach-holding-paperwork-join-fitness-club_590464-96992.jpg?semt=ais_hybrid&w=740&q=80",
-      bio: "Certified yoga instructor with focus on mobility",
-      certifications: ["RYT-500", "FMS"],
-      email: "mike@powergym.com",
-      phone: "+1234567892",
-      socials: {
-        instagram: "https://instagram.com/mikejohnson",
-        linkedin: "https://linkedin.com/in/mikejohnson",
-        whatsapp: "+1234567892"
-      },
-      featured: true,
-      size: "large"
-    },
-    {
-      id: 4,
-      name: "Emily Davis",
-      specialty: "Nutrition & Coaching",
-      image: "https://www.essence.com/wp-content/uploads/2018/11/Screen-Shot-2018-11-09-at-11.43.01-AM.png",
-      bio: "Registered dietitian and wellness coach",
-      certifications: ["RD", "NBC-HWC"],
-      email: "emily@powergym.com",
-      phone: "+1234567893",
-      socials: {
-        instagram: "https://instagram.com/emilydavis",
-        facebook: "https://facebook.com/emilydavis",
-        linkedin: "https://linkedin.com/in/emilydavis",
-        x: "https://x.com/emilydavis",
-        whatsapp: "+1234567893"
-      },
-      featured: false,
-      size: "regular"
-    },
-    {
-      id: 5,
-      name: "Alex Carter",
-      specialty: "Weightlifting",
-      image: "https://smartgyms.co.ke/wp-content/uploads/2019/12/Desmond-500x500.jpg",
-      bio: "Olympic weightlifting specialist",
-      certifications: ["USAW-L1", "NSCA-CPT"],
-      email: "alex@powergym.com",
-      phone: "+1234567894",
-      socials: {
-        instagram: "https://instagram.com/alexcarter",
-        x: "https://x.com/alexcarter",
-        whatsapp: "+1234567894"
-      },
-      featured: false,
-      size: "regular"
-    },
-    {
-      id: 6,
-      name: "Sarah Wilson",
-      specialty: "CrossFit & Conditioning",
-      image: "https://www.uaepersonaltrainers.com/wp-content/uploads/2022/10/Dubai-Female-Personal-Trainer-and-Group-Fitness-Coach-Mary-e1667037675488.jpeg",
-      bio: "CrossFit Level 2 trainer with competition experience",
-      certifications: ["CF-L2", "NASM-PES"],
-      email: "sarah@powergym.com",
-      phone: "+1234567895",
-      socials: {
-        instagram: "https://instagram.com/sarahwilson",
-        facebook: "https://facebook.com/sarahwilson",
-        x: "https://x.com/sarahwilson",
-        whatsapp: "+1234567895"
-      },
-      featured: true,
-      size: "medium-large"
-    },
-  ];
+  const { user } = useAuth();
 
   const FAQS = [
     {
@@ -144,19 +40,89 @@ export default function Trainers() {
     }
   ];
 
+  useEffect(() => {
+    fetchAllTrainers();
+  }, []);
+
+  const fetchAllTrainers = async () => {
+    try {
+      setLoading(true);
+      setError(null);
+      
+      const response = await trainersService.getAllTrainers({
+        page: 1,
+        limit: 50
+      });
+      
+      if (response.success) {
+        const formattedTrainers = response.data.trainers.map(trainer => 
+          trainersService.formatTrainerForDisplay(trainer)
+        );
+        setTrainers(formattedTrainers);
+      } else {
+        throw new Error(response.message || 'Failed to fetch trainers');
+      }
+    } catch (err) {
+      console.error('Failed to fetch trainers:', err);
+      setError(err.message || 'Failed to load trainers. Please try again later.');
+      setTrainers([]);
+    } finally {
+      setLoading(false);
+    }
+  };
+
   const handleImageError = (e) => {
     e.target.src = 'https://via.placeholder.com/400x500/f97316/ffffff?text=Trainer'
   }
 
   const handleBookSession = (trainer) => {
-    setSelectedTrainer(trainer)
-    // Could open a modal or redirect to booking page
-    console.log('Booking session with:', trainer.name)
+    setSelectedTrainer(trainer);
+    console.log('Booking session with:', trainer.name);
   }
 
   const toggleFaq = (id) => {
     setOpenFaq(openFaq === id ? null : id);
   };
+
+  // Loading state
+  if (loading) {
+    return (
+      <div className="pt-4 md:pt-24 py-8 md:py-16">
+        <div className="container mx-auto px-4 md:px-16">
+          <div className="flex justify-center items-center min-h-[400px]">
+            <div className="text-center">
+              <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-orange-500 mx-auto mb-4"></div>
+              <p className="text-gray-600">Loading trainers...</p>
+            </div>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  // Error state
+  if (error) {
+    return (
+      <div className="pt-4 md:pt-24 py-8 md:py-16">
+        <div className="container mx-auto px-4 md:px-16">
+          <div className="text-center py-12">
+            <div className="text-red-500 text-4xl mb-4">⚠️</div>
+            <h3 className="text-xl font-bold text-gray-800 mb-2">Unable to load trainers</h3>
+            <p className="text-gray-600 mb-4">{error}</p>
+            <button 
+              onClick={fetchAllTrainers}
+              className="bg-orange-500 text-white px-6 py-2 rounded-lg font-semibold hover:bg-orange-600 transition"
+            >
+              Retry
+            </button>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  // Use trainers from API or empty array if none
+  const displayTrainers = trainers.length > 0 ? trainers : [];
 
   return (
     <div className="pt-4 md:pt-24 py-8 md:py-16">
@@ -186,7 +152,7 @@ export default function Trainers() {
 
         {/* Mobile Pinterest-style Masonry Layout */}
         <div className="md:hidden columns-2 sm:columns-3 gap-4 space-y-4">
-          {TRAINERS.map((trainer) => (
+          {displayTrainers.map((trainer) => (
             <div 
               key={trainer.id} 
               className="break-inside-avoid mb-4 group cursor-pointer"
@@ -214,31 +180,31 @@ export default function Trainers() {
                   <p className="text-white text-xs text-center mb-2">{trainer.bio}</p>
                   {/* Social Links */}
                   <div className="flex gap-2">
-                    {trainer.socials.instagram && (
+                    {trainer.socials?.instagram && (
                       <a href={trainer.socials.instagram} target="_blank" rel="noopener noreferrer" 
                          className="text-white hover:text-orange-400 transition" onClick={(e) => e.stopPropagation()}>
                         <FaInstagram size={16} />
                       </a>
                     )}
-                    {trainer.socials.x && (
+                    {trainer.socials?.x && (
                       <a href={trainer.socials.x} target="_blank" rel="noopener noreferrer" 
                          className="text-white hover:text-orange-400 transition" onClick={(e) => e.stopPropagation()}>
                         <FaXTwitter size={16} />
                       </a>
                     )}
-                    {trainer.socials.linkedin && (
+                    {trainer.socials?.linkedin && (
                       <a href={trainer.socials.linkedin} target="_blank" rel="noopener noreferrer" 
                          className="text-white hover:text-orange-400 transition" onClick={(e) => e.stopPropagation()}>
                         <FaLinkedin size={16} />
                       </a>
                     )}
-                    {trainer.socials.facebook && (
+                    {trainer.socials?.facebook && (
                       <a href={trainer.socials.facebook} target="_blank" rel="noopener noreferrer" 
                          className="text-white hover:text-orange-400 transition" onClick={(e) => e.stopPropagation()}>
                         <FaFacebookF size={16} />
                       </a>
                     )}
-                    {trainer.socials.whatsapp && (
+                    {trainer.socials?.whatsapp && (
                       <a href={`https://wa.me/${trainer.socials.whatsapp.replace(/\+/g, '')}`} target="_blank" rel="noopener noreferrer" 
                          className="text-white hover:text-orange-400 transition" onClick={(e) => e.stopPropagation()}>
                         <FaWhatsapp size={16} />
@@ -256,11 +222,11 @@ export default function Trainers() {
        {/* Desktop Staggered Masonry Grid - Hidden on mobile */}
        <div className="hidden md:grid grid-cols-6 gap-4 auto-rows-[minmax(250px,auto)]">
           {/* Trainer 1 - Pinned Photo Style */}
-          <div className="flex flex-col items-center group cursor-pointer" onClick={() => handleBookSession(TRAINERS[0])}>
+          <div className="flex flex-col items-center group cursor-pointer" onClick={() => handleBookSession(displayTrainers[0])}>
             <div className="relative bg-white rounded-xl shadow-lg overflow-hidden hover:shadow-orange transition-shadow h-48 w-full">
               <img
-                src={TRAINERS[0].image}
-                alt={`${TRAINERS[0].name} - ${TRAINERS[0].specialty} trainer`}
+                src={displayTrainers[0]?.image}
+                alt={`${displayTrainers[0]?.name} - ${displayTrainers[0]?.specialty} trainer`}
                 className="w-full h-full object-cover"
                 onError={handleImageError}
                 loading="lazy"
@@ -271,16 +237,16 @@ export default function Trainers() {
                 </button>
               </div>
             </div>
-            <h3 className="text-sm font-bold mt-3 text-black-900">{TRAINERS[0].name}</h3>
-            <p className="text-orange-500 font-semibold text-xs">{TRAINERS[0].specialty}</p>
+            <h3 className="text-sm font-bold mt-3 text-black-900">{displayTrainers[0]?.name}</h3>
+            <p className="text-orange-500 font-semibold text-xs">{displayTrainers[0]?.specialty}</p>
           </div>
 
           {/* Trainer 2 - Regular */}
-          <div className="flex flex-col items-center group cursor-pointer" onClick={() => handleBookSession(TRAINERS[1])}>
+          <div className="flex flex-col items-center group cursor-pointer" onClick={() => handleBookSession(displayTrainers[1])}>
             <div className="relative bg-white rounded-xl shadow-lg overflow-hidden hover:shadow-orange transition-shadow h-48 w-full">
               <img 
-                src={TRAINERS[1].image} 
-                alt={`${TRAINERS[1].name} - ${TRAINERS[1].specialty} trainer`}
+                src={displayTrainers[1]?.image} 
+                alt={`${displayTrainers[1]?.name} - ${displayTrainers[1]?.specialty} trainer`}
                 className="w-full h-full object-cover" 
                 onError={handleImageError}
                 loading="lazy"
@@ -291,16 +257,16 @@ export default function Trainers() {
                 </button>
               </div>
             </div>
-            <h3 className="text-sm font-bold mt-3 text-black-900">{TRAINERS[1].name}</h3>
-            <p className="text-orange-500 font-semibold text-xs">{TRAINERS[1].specialty}</p>
+            <h3 className="text-sm font-bold mt-3 text-black-900">{displayTrainers[1]?.name}</h3>
+            <p className="text-orange-500 font-semibold text-xs">{displayTrainers[1]?.specialty}</p>
           </div>
 
           {/* Trainer 3 - Featured (Larger) */}
-          <div className="relative flex items-start group cursor-pointer" onClick={() => handleBookSession(TRAINERS[2])}>
+          <div className="relative flex items-start group cursor-pointer" onClick={() => handleBookSession(displayTrainers[2])}>
             <div className="relative bg-gradient-orange rounded-xl shadow-lg overflow-hidden hover:shadow-orange transition-shadow h-80 w-full">
               <img
-                src={TRAINERS[2].image}
-                alt={`${TRAINERS[2].name} - ${TRAINERS[2].specialty} trainer`}
+                src={displayTrainers[2]?.image}
+                alt={`${displayTrainers[2]?.name} - ${displayTrainers[2]?.specialty} trainer`}
                 className="w-full h-full object-cover"
                 onError={handleImageError}
                 loading="lazy"
@@ -315,20 +281,20 @@ export default function Trainers() {
             {/* Text — Right side, positioned above Trainers 4 & 5 */}
             <div className="absolute left-full ml-4 top-10 text-left">
               <h3 className="text-sm font-bold text-black-900 whitespace-nowrap">
-                {TRAINERS[2].name}
+                {displayTrainers[2]?.name}
               </h3>
               <p className="text-orange-500 font-semibold text-xs whitespace-nowrap">
-                {TRAINERS[2].specialty}
+                {displayTrainers[2]?.specialty}
               </p>
             </div>
           </div>
 
           {/* Trainer 4 - Regular (below Trainer 3’s text) */}
-          <div className="flex flex-col items-center mt-32 group cursor-pointer" onClick={() => handleBookSession(TRAINERS[3])}>
+          <div className="flex flex-col items-center mt-32 group cursor-pointer" onClick={() => handleBookSession(displayTrainers[3])}>
             <div className="relative bg-white rounded-xl shadow-lg overflow-hidden hover:shadow-orange transition-shadow h-48 w-full">
               <img 
-                src={TRAINERS[3].image} 
-                alt={`${TRAINERS[3].name} - ${TRAINERS[3].specialty} trainer`}
+                src={displayTrainers[3]?.image} 
+                alt={`${displayTrainers[3]?.name} - ${displayTrainers[3]?.specialty} trainer`}
                 className="w-full h-full object-cover" 
                 onError={handleImageError}
                 loading="lazy"
@@ -339,16 +305,16 @@ export default function Trainers() {
                 </button>
               </div>
             </div>
-            <h3 className="text-sm font-bold mt-3 text-black-900">{TRAINERS[3].name}</h3>
-            <p className="text-orange-500 font-semibold text-xs">{TRAINERS[3].specialty}</p>
+            <h3 className="text-sm font-bold mt-3 text-black-900">{displayTrainers[3]?.name}</h3>
+            <p className="text-orange-500 font-semibold text-xs">{displayTrainers[3]?.specialty}</p>
           </div>
 
           {/* Trainer 5 - Regular (aligned with Trainer 4) */}
-          <div className="flex flex-col items-center mt-32 group cursor-pointer" onClick={() => handleBookSession(TRAINERS[4])}>
+          <div className="flex flex-col items-center mt-32 group cursor-pointer" onClick={() => handleBookSession(displayTrainers[4])}>
             <div className="relative bg-white rounded-xl shadow-lg overflow-hidden hover:shadow-orange transition-shadow h-48 w-full">
               <img 
-                src={TRAINERS[4].image} 
-                alt={`${TRAINERS[4].name} - ${TRAINERS[4].specialty} trainer`}
+                src={displayTrainers[4]?.image} 
+                alt={`${displayTrainers[4]?.name} - ${displayTrainers[4]?.specialty} trainer`}
                 className="w-full h-full object-cover" 
                 onError={handleImageError}
                 loading="lazy"
@@ -359,16 +325,16 @@ export default function Trainers() {
                 </button>
               </div>
             </div>
-            <h3 className="text-sm font-bold mt-3 text-black-900">{TRAINERS[4].name}</h3>
-            <p className="text-orange-500 font-semibold text-xs">{TRAINERS[4].specialty}</p>
+            <h3 className="text-sm font-bold mt-3 text-black-900">{displayTrainers[4]?.name}</h3>
+            <p className="text-orange-500 font-semibold text-xs">{displayTrainers[4]?.specialty}</p>
           </div>
 
           {/* Trainer 6 - Secondary Featured (Larger) */}
-          <div className="flex flex-col items-center group cursor-pointer" onClick={() => handleBookSession(TRAINERS[5])}>
+          <div className="flex flex-col items-center group cursor-pointer" onClick={() => handleBookSession(displayTrainers[5])}>
             <div className="relative bg-gradient-to-br from-orange-400 to-orange-600 rounded-xl shadow-lg overflow-hidden hover:shadow-orange transition-shadow h-56 w-full">
               <img 
-                src={TRAINERS[5].image} 
-                alt={`${TRAINERS[5].name} - ${TRAINERS[5].specialty} trainer`}
+                src={displayTrainers[5]?.image} 
+                alt={`${displayTrainers[5]?.name} - ${displayTrainers[5]?.specialty} trainer`}
                 className="w-full h-full object-cover border-4 border-white" 
                 onError={handleImageError}
                 loading="lazy"
@@ -379,8 +345,8 @@ export default function Trainers() {
                 </button>
               </div>
             </div>
-            <h3 className="text-sm font-bold mt-3 text-black-900">{TRAINERS[5].name}</h3>
-            <p className="text-orange-500 font-semibold text-xs">{TRAINERS[5].specialty}</p>
+            <h3 className="text-sm font-bold mt-3 text-black-900">{displayTrainers[5]?.name}</h3>
+            <p className="text-orange-500 font-semibold text-xs">{displayTrainers[5]?.specialty}</p>
           </div>
 
         </div>
@@ -469,8 +435,6 @@ export default function Trainers() {
       {/* CTA Component - Outside container to maintain full-width design */}
       <CTA />
 
-      {/* Before */}
-
       {/* Simple Booking Modal */}
       {selectedTrainer && (
         <div 
@@ -491,31 +455,31 @@ export default function Trainers() {
               <div className="mb-4">
                 <p className="text-sm font-semibold text-black-900 mb-2">Connect:</p>
                 <div className="flex gap-3">
-                  {selectedTrainer.socials.instagram && (
+                  {selectedTrainer.socials?.instagram && (
                     <a href={selectedTrainer.socials.instagram} target="_blank" rel="noopener noreferrer" 
                        className="text-orange-500 hover:text-orange-600 transition">
                       <FaInstagram size={24} />
                     </a>
                   )}
-                  {selectedTrainer.socials.x && (
+                  {selectedTrainer.socials?.x && (
                     <a href={selectedTrainer.socials.x} target="_blank" rel="noopener noreferrer" 
                        className="text-orange-500 hover:text-orange-600 transition">
                       <FaXTwitter size={24} />
                     </a>
                   )}
-                  {selectedTrainer.socials.linkedin && (
+                  {selectedTrainer.socials?.linkedin && (
                     <a href={selectedTrainer.socials.linkedin} target="_blank" rel="noopener noreferrer" 
                        className="text-orange-500 hover:text-orange-600 transition">
                       <FaLinkedin size={24} />
                     </a>
                   )}
-                  {selectedTrainer.socials.facebook && (
+                  {selectedTrainer.socials?.facebook && (
                     <a href={selectedTrainer.socials.facebook} target="_blank" rel="noopener noreferrer" 
                        className="text-orange-500 hover:text-orange-600 transition">
                       <FaFacebookF size={24} />
                     </a>
                   )}
-                  {selectedTrainer.socials.whatsapp && (
+                  {selectedTrainer.socials?.whatsapp && (
                     <a href={`https://wa.me/${selectedTrainer.socials.whatsapp.replace(/\+/g, '')}`} target="_blank" rel="noopener noreferrer" 
                        className="text-orange-500 hover:text-orange-600 transition">
                       <FaWhatsapp size={24} />
@@ -527,7 +491,7 @@ export default function Trainers() {
               <div className="mb-4">
                 <p className="text-sm font-semibold text-black-900 mb-2">Certifications:</p>
                 <div className="flex flex-wrap gap-2">
-                  {selectedTrainer.certifications.map((cert, idx) => (
+                  {selectedTrainer.certifications?.map((cert, idx) => (
                     <span key={idx} className="bg-orange-100 text-orange-600 px-3 py-1 rounded-full text-xs font-semibold">
                       {cert}
                     </span>

@@ -1,57 +1,111 @@
-import React, { useState } from 'react'
-import Button from '../components/Button'
-import { Link } from 'react-router-dom'
+import React, { useState, useEffect } from 'react';
+import Button from '../components/Button';
+import { Link } from 'react-router-dom';
+import { membershipService } from '../services/membershipService';
+import { useAuth } from '../hooks/authHooks';
 
 const Membership = () => {
-  const [billingCycle, setBillingCycle] = useState('monthly')
+  const [billingCycle, setBillingCycle] = useState('monthly');
+  const [plans, setPlans] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(null);
+  const { user } = useAuth();
 
-  const PLANS = [
-    {
-      id: 1,
-      name: 'Basic',
-      price: { monthly: 29, yearly: 290 },
-      description: 'Perfect for getting started',
-      features: [
-        'Gym access during peak hours',
-        'Basic equipment access',
-        'Locker room access',
-        'Community events',
-      ],
-      highlighted: false,
-    },
-    {
-      id: 2,
-      name: 'Pro',
-      price: { monthly: 59, yearly: 590 },
-      description: 'Most popular choice',
-      features: [
-        '24/7 gym access',
-        'All equipment access',
-        '2 personal training sessions/month',
-        'Group fitness classes',
-        'Nutrition consultation',
-        'Priority support',
-      ],
-      highlighted: true,
-    },
-    {
-      id: 3,
-      name: 'Elite',
-      price: { monthly: 99, yearly: 990 },
-      description: 'Premium experience',
-      features: [
-        '24/7 gym access',
-        'All equipment access',
-        'Unlimited personal training',
-        'All group classes included',
-        'Monthly nutrition plans',
-        'Recovery services',
-        'VIP lounge access',
-        'Priority concierge',
-      ],
-      highlighted: false,
-    },
-  ]
+  useEffect(() => {
+    fetchPlans();
+  }, []);
+
+  const fetchPlans = async () => {
+    try {
+      setLoading(true);
+      setError(null);
+      
+      const response = await membershipService.getAllPlans();
+      
+      if (response.success) {
+        setPlans(response.data);
+      } else {
+        throw new Error(response.message || 'Failed to fetch plans');
+      }
+    } catch (err) {
+      console.error('Failed to fetch plans:', err);
+      setError('Failed to load membership plans. Please try again.');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleGetStarted = async (plan) => {
+    if (!user) {
+      // Redirect to login if not authenticated
+      window.location.href = `/login?redirect=membership&plan=${plan.id}&cycle=${billingCycle}`;
+      return;
+    }
+
+    try {
+      const response = await membershipService.purchaseMembership({
+        plan_id: plan.id,
+        billing_cycle: billingCycle,
+        auto_renew: true
+      });
+
+      if (response.success) {
+        // Show success message or redirect to success page
+        alert('Membership purchased successfully!');
+        // You could also redirect to dashboard
+        // window.location.href = '/dashboard';
+      }
+    } catch (err) {
+      console.error('Purchase failed:', err);
+      alert('Failed to purchase membership. Please try again.');
+    }
+  };
+
+  // Calculate yearly savings for a plan
+  const getYearlySavings = (plan) => {
+    return membershipService.calculateYearlySavings(plan);
+  };
+
+  // Loading state
+  if (loading) {
+    return (
+      <div className="pt-4 md:pt-20">
+        <section className="relative py-8 md:py-12 bg-gradient-to-b from-white to-gray-50">
+          <div className="container mx-auto px-4 md:px-16">
+            <div className="flex justify-center items-center min-h-[400px]">
+              <div className="text-center">
+                <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-orange-500 mx-auto mb-4"></div>
+                <p className="text-gray-600">Loading membership plans...</p>
+              </div>
+            </div>
+          </div>
+        </section>
+      </div>
+    );
+  }
+
+  // Error state
+  if (error) {
+    return (
+      <div className="pt-4 md:pt-20">
+        <section className="relative py-8 md:py-12 bg-gradient-to-b from-white to-gray-50">
+          <div className="container mx-auto px-4 md:px-16">
+            <div className="text-center py-12">
+              <div className="text-red-500 text-4xl mb-4">⚠️</div>
+              <h3 className="text-xl font-bold text-gray-800 mb-2">Unable to load plans</h3>
+              <p className="text-gray-600 mb-4">{error}</p>
+              <button 
+                onClick={fetchPlans}
+                className="bg-orange-500 text-white px-6 py-2 rounded-lg font-semibold hover:bg-orange-600 transition"
+              >
+                Retry
+              </button>
+            </div>
+          </div>
+        </section>
+      </div>
+    );
+  }
 
   return (
     <div className="pt-4 md:pt-20">
@@ -88,7 +142,7 @@ const Membership = () => {
                 className={`px-4 md:px-6 py-2 rounded-full font-semibold transition text-sm md:text-base ${
                   billingCycle === 'monthly'
                     ? 'bg-orange-500 text-white'
-                    : 'text-gray-700'
+                    : 'text-gray-700 hover:bg-gray-300'
                 }`}
               >
                 Monthly
@@ -98,57 +152,79 @@ const Membership = () => {
                 className={`px-4 md:px-6 py-2 rounded-full font-semibold transition text-sm md:text-base ${
                   billingCycle === 'yearly'
                     ? 'bg-orange-500 text-white'
-                    : 'text-gray-700'
+                    : 'text-gray-700 hover:bg-gray-300'
                 }`}
               >
                 Yearly
+                {plans.some(p => {
+                  const savings = getYearlySavings(p);
+                  return savings.percentage > 0;
+                }) && (
+                  <span className="ml-2 text-xs bg-white text-orange-500 px-2 py-0.5 rounded-full">
+                    Save up to 20%
+                  </span>
+                )}
               </button>
             </div>
           </div>
 
           {/* Pricing Cards */}
           <div className="grid grid-cols-1 md:grid-cols-3 gap-6 md:gap-8 max-w-6xl mx-auto">
-            {PLANS.map((plan) => (
-              <div
-                key={plan.id}
-                className={`rounded-lg p-6 md:p-8 transition ${
-                  plan.highlighted
-                    ? 'bg-orange-500 text-white shadow-lg md:scale-105'
-                    : 'bg-white border-2 border-gray-200'
-                }`}
-              >
-                <h3 className="text-xl md:text-2xl font-bold mb-2">{plan.name}</h3>
-                <p className={`text-xs md:text-sm mb-4 md:mb-6 ${plan.highlighted ? 'text-orange-100' : 'text-gray-600'}`}>
-                  {plan.description}
-                </p>
+            {plans.map((plan) => {
+              const savings = getYearlySavings(plan);
+              return (
+                <div
+                  key={plan.id}
+                  className={`rounded-lg p-6 md:p-8 transition ${
+                    plan.highlighted
+                      ? 'bg-orange-500 text-white shadow-lg md:scale-105'
+                      : 'bg-white border-2 border-gray-200 hover:border-orange-300'
+                  }`}
+                >
+                  <h3 className="text-xl md:text-2xl font-bold mb-2">{plan.name}</h3>
+                  <p className={`text-xs md:text-sm mb-4 md:mb-6 ${plan.highlighted ? 'text-orange-100' : 'text-gray-600'}`}>
+                    {plan.description}
+                  </p>
 
-                <div className="mb-4 md:mb-6">
-                  <span className="text-3xl md:text-4xl font-bold">${plan.price[billingCycle]}</span>
-                  <span className={`text-sm md:text-base ${plan.highlighted ? 'text-orange-100' : 'text-gray-600'}`}>
-                    /{billingCycle === 'monthly' ? 'month' : 'year'}
-                  </span>
+                  <div className="mb-4 md:mb-6">
+                    <span className="text-3xl md:text-4xl font-bold">
+                      ${billingCycle === 'monthly' ? plan.price.monthly : plan.price.yearly}
+                    </span>
+                    <span className={`text-sm md:text-base ${plan.highlighted ? 'text-orange-100' : 'text-gray-600'}`}>
+                      /{billingCycle === 'monthly' ? 'month' : 'year'}
+                    </span>
+                    {billingCycle === 'yearly' && savings.percentage > 0 && (
+                      <p className={`text-xs mt-1 ${plan.highlighted ? 'text-orange-100' : 'text-green-600'}`}>
+                        {savings.display}
+                      </p>
+                    )}
+                  </div>
+
+                  <Button 
+                    variant="accent" 
+                    className="w-full mb-6 md:mb-8 text-sm md:text-base"
+                    onClick={() => handleGetStarted(plan)}
+                  >
+                    Get Started
+                  </Button>
+
+                  <ul className="space-y-2 md:space-y-3">
+                    {plan.features.map((feature, idx) => (
+                      <li key={idx} className="flex items-center gap-2 md:gap-3">
+                        <svg
+                          className={`w-4 h-4 md:w-5 md:h-5 flex-shrink-0 ${plan.highlighted ? 'text-white' : 'text-orange-500'}`}
+                          fill="currentColor"
+                          viewBox="0 0 20 20"
+                        >
+                          <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" />
+                        </svg>
+                        <span className="text-xs md:text-sm">{feature}</span>
+                      </li>
+                    ))}
+                  </ul>
                 </div>
-
-                <Button variant="accent" className="w-full mb-6 md:mb-8 text-sm md:text-base">
-                  Get Started
-                </Button>
-
-                <ul className="space-y-2 md:space-y-3">
-                  {plan.features.map((feature, idx) => (
-                    <li key={idx} className="flex items-center gap-2 md:gap-3">
-                      <svg
-                        className={`w-4 h-4 md:w-5 md:h-5 flex-shrink-0 ${plan.highlighted ? 'text-white' : 'text-orange-500'}`}
-                        fill="currentColor"
-                        viewBox="0 0 20 20"
-                      >
-                        <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" />
-                      </svg>
-                      <span className="text-xs md:text-sm">{feature}</span>
-                    </li>
-                  ))}
-                </ul>
-              </div>
-            ))}
+              );
+            })}
           </div>
         </div>
       </section>
@@ -192,7 +268,7 @@ const Membership = () => {
                   { q: 'Do you offer a free trial?', a: 'Yes, we offer a 7-day free trial for all membership plans.' },
                   { q: 'Can I upgrade or downgrade?', a: 'Absolutely! You can change your plan anytime, prorated to your billing cycle.' },
                 ]).map((faq, idx) => (
-                  <div key={idx} className="bg-white p-4 md:p-6 rounded-lg border border-gray-200">
+                  <div key={idx} className="bg-white p-4 md:p-6 rounded-lg border border-gray-200 hover:shadow-md transition">
                     <h4 className="font-semibold mb-2 text-sm md:text-base">{faq.q}</h4>
                     <p className="text-gray-600 text-xs md:text-sm">{faq.a}</p>
                   </div>
@@ -204,7 +280,7 @@ const Membership = () => {
         </div>
       </section>
     </div>
-  )
-}
+  );
+};
 
-export default Membership
+export default Membership;
