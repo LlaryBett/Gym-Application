@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
+import toast from 'react-hot-toast';
 import { 
   FaUser, FaEnvelope, FaPhone, FaCalendar, FaCrown, FaCreditCard,
   FaDumbbell, FaCalendarAlt, FaHeart, FaHistory, FaCog,
@@ -8,7 +9,7 @@ import {
   FaGenderless, FaUserTag, FaInfoCircle, FaExclamationTriangle
 } from 'react-icons/fa';
 import { useAuth } from '../hooks/authHooks';
-import { authAPI, memberAPI } from '../services/api'; // ✅ ADD memberAPI import
+import { authAPI, memberAPI } from '../services/api';
 import { membershipService } from '../services/membershipService';
 import { programService } from '../services/programService';
 import { bookingService } from '../services/bookingService';
@@ -16,7 +17,7 @@ import CTA from '../components/CTA';
 
 const Profile = () => {
   const navigate = useNavigate();
-  const { user, logout } = useAuth();
+  const { user } = useAuth();
   
   // ===== STATE =====
   const [activeTab, setActiveTab] = useState('overview');
@@ -137,7 +138,6 @@ const Profile = () => {
     try {
       setIsSubmitting(true);
       
-      // Prepare update data - only the fields we want to update
       const updateData = {
         first_name: editForm.first_name,
         last_name: editForm.last_name,
@@ -148,20 +148,18 @@ const Profile = () => {
         emergency_contact_relationship: emergencyContact.relationship
       };
       
-      // Call the API to update member
       const response = await memberAPI.update(user.id, updateData);
       
       if (response.success) {
-        // Refresh all profile data
         await fetchAllProfileData();
         setShowEditModal(false);
-        alert('Profile updated successfully!');
+        toast.success('Profile updated successfully!');
       } else {
         throw new Error(response.message || 'Failed to update profile');
       }
     } catch (err) {
       console.error('Failed to update profile:', err);
-      alert('Failed to update profile. Please try again.');
+      toast.error('Failed to update profile. Please try again.');
     } finally {
       setIsSubmitting(false);
     }
@@ -173,10 +171,10 @@ const Profile = () => {
       try {
         await membershipService.cancelMembership(membership.id);
         fetchAllProfileData();
-        alert('Membership cancelled successfully');
+        toast.success('Membership cancelled successfully');
       } catch (err) {
         console.error('Failed to cancel membership:', err);
-        alert('Failed to cancel membership');
+        toast.error('Failed to cancel membership');
       }
     }
   };
@@ -185,8 +183,10 @@ const Profile = () => {
     try {
       await programService.unsaveProgram(programId);
       setSavedPrograms(savedPrograms.filter(p => p.id !== programId));
+      toast.success('Program removed from saved');
     } catch (err) {
       console.error('Failed to unsave program:', err);
+      toast.error('Failed to unsave program');
     }
   };
 
@@ -236,7 +236,7 @@ const Profile = () => {
   }
 
   return (
-    <div className="pt-20 min-h-screen bg-gray-50">
+    <div className="min-h-screen bg-gray-50">
       <div className="container mx-auto px-4 md:px-16 py-8">
         
         {/* ===== HEADER ===== */}
@@ -301,12 +301,6 @@ const Profile = () => {
                 className="flex items-center gap-2 px-4 py-2 bg-gray-100 hover:bg-gray-200 rounded-lg transition"
               >
                 <FaEdit /> Edit Profile
-              </button>
-              <button
-                onClick={logout}
-                className="flex items-center gap-2 px-4 py-2 bg-red-50 hover:bg-red-100 text-red-600 rounded-lg transition"
-              >
-                <FaSignOutAlt /> Logout
               </button>
             </div>
           </div>
@@ -438,52 +432,108 @@ const Profile = () => {
           </div>
         )}
 
-        {/* ===== MEMBERSHIP CARD ===== */}
-        {membership && (
-          <div className="bg-gradient-to-br from-orange-500 to-orange-600 rounded-xl shadow-lg p-6 md:p-8 mb-8 text-white">
-            <div className="flex flex-col md:flex-row gap-6 items-start md:items-center justify-between">
-              <div className="flex items-center gap-4">
-                <div className="bg-white/20 p-4 rounded-full">
-                  <FaCrown size={24} />
-                </div>
-                <div>
-                  <h3 className="text-xl font-bold">{membership.plan_name} Membership</h3>
-                  <p className="text-orange-100 mt-1">Member #{membership.membership_number}</p>
-                </div>
-              </div>
-              <div className="text-right">
-                <div className="text-2xl font-bold">${membership.price_paid}</div>
-                <p className="text-orange-100 text-sm">{membership.billing_cycle}</p>
-              </div>
-            </div>
-            
-            <div className="grid md:grid-cols-3 gap-6 mt-6 pt-6 border-t border-orange-400">
-              <div>
-                <p className="text-orange-100 text-sm">Status</p>
-                <p className="font-semibold flex items-center gap-1">
-                  <FaCheckCircle className="text-green-300" /> {membership.status || 'Active'}
-                </p>
-              </div>
-              <div>
-                <p className="text-orange-100 text-sm">Renewal Date</p>
-                <p className="font-semibold">{formatDate(membership.end_date)}</p>
-              </div>
-              <div>
-                <p className="text-orange-100 text-sm">Auto-Renew</p>
-                <p className="font-semibold">{membership.auto_renew ? 'ON' : 'OFF'}</p>
-              </div>
-            </div>
+        
+       {/* ===== MEMBERSHIP CARD ===== */}
+{membership && (
+  <div className="bg-gradient-to-br from-orange-500 to-orange-600 rounded-xl shadow-lg p-6 md:p-8 mb-8 text-white">
+    {/* Desktop - Stats Row at TOP RIGHT (Hidden on mobile) */}
+    <div className="hidden md:flex items-start gap-8 w-full justify-end">
+      {/* Price */}
+      <div className="text-right">
+        <div className="text-2xl font-bold">Ksh{membership.price_paid}</div>
+        <p className="text-orange-100 text-sm">{membership.billing_cycle}</p>
+      </div>
 
-            <div className="mt-6 flex gap-3">
-              <Link to="/membership" className="bg-white text-orange-600 px-4 py-2 rounded-lg font-semibold hover:bg-orange-50 transition">
-                Upgrade Plan
-              </Link>
-              <button onClick={handleCancelMembership} className="bg-white/20 text-white px-4 py-2 rounded-lg font-semibold hover:bg-white/30 transition">
-                Cancel Membership
-              </button>
-            </div>
-          </div>
-        )}
+      {/* Status */}
+      <div className="text-right min-w-[90px]">
+        <p className="text-orange-100 text-sm">Status</p>
+        <p className="font-semibold flex items-center gap-1">
+          <FaCheckCircle className="text-green-300" /> {membership.status || 'Active'}
+        </p>
+      </div>
+
+      {/* Renewal */}
+      <div className="text-right min-w-[100px]">
+        <p className="text-orange-100 text-sm">Renews</p>
+        <p className="font-semibold text-sm">{formatDate(membership.end_date)}</p>
+      </div>
+
+      {/* Auto-Renew */}
+      <div className="text-right min-w-[80px]">
+        <p className="text-orange-100 text-sm">Auto</p>
+        <p className="font-semibold">{membership.auto_renew ? 'ON' : 'OFF'}</p>
+      </div>
+
+      {/* Days Left Badge */}
+      {membership.days_remaining > 0 && (
+        <div className="bg-white/20 px-3 py-1 rounded-full text-sm font-semibold whitespace-nowrap">
+          {membership.days_remaining} days left
+        </div>
+      )}
+    </div>
+
+    {/* Desktop Layout - Plan Header on Left */}
+    <div className="flex flex-col md:flex-row gap-6 items-start justify-between">
+      {/* Left - Icon & Plan */}
+      <div className="flex items-center gap-4">
+        <div className="bg-white/20 p-4 rounded-full flex-shrink-0">
+          <FaCrown size={24} />
+        </div>
+        <div>
+          <h3 className="text-xl font-bold">{membership.plan_name} Membership</h3>
+          <p className="text-orange-100 mt-1 text-sm">Member #{membership.membership_number}</p>
+        </div>
+      </div>
+
+      {/* Mobile - Price & Status (Mobile only) */}
+      <div className="flex md:hidden justify-between w-full mt-2">
+        <div>
+          <div className="text-2xl font-bold">Ksh{membership.price_paid}</div>
+          <p className="text-orange-100 text-xs">{membership.billing_cycle}</p>
+        </div>
+        <div className="text-right">
+          <p className="text-orange-100 text-xs">Status</p>
+          <p className="font-semibold flex items-center gap-1">
+            <FaCheckCircle className="text-green-300" size={14} /> {membership.status || 'Active'}
+          </p>
+        </div>
+      </div>
+    </div>
+
+    {/* Mobile - Additional Info Row (Mobile only) */}
+    <div className="flex md:hidden justify-between mt-4 pt-4 border-t border-orange-400">
+      <div>
+        <p className="text-orange-100 text-xs">Renews</p>
+        <p className="font-semibold text-sm">{formatDate(membership.end_date)}</p>
+      </div>
+      <div>
+        <p className="text-orange-100 text-xs">Auto-Renew</p>
+        <p className="font-semibold">{membership.auto_renew ? 'ON' : 'OFF'}</p>
+      </div>
+      {membership.days_remaining > 0 && (
+        <div className="bg-white/20 px-3 py-1 rounded-full text-xs font-semibold">
+          {membership.days_remaining}d left
+        </div>
+      )}
+    </div>
+
+    {/* Buttons - Same for both */}
+    <div className="mt-6 flex gap-3 justify-center md:justify-center">
+      <Link
+        to="/membership"
+        className="bg-gray-900 text-white px-4 py-2 rounded-full font-semibold hover:bg-black transition text-sm md:text-base"
+      >
+        Upgrade Plan
+      </Link>
+      <button
+        onClick={handleCancelMembership}
+        className="bg-gray-700 text-white px-4 py-2 rounded-full font-semibold hover:bg-gray-800 transition text-sm md:text-base"
+      >
+        Cancel
+      </button>
+    </div>
+  </div>
+)}
 
         {/* ===== TABS ===== */}
         <div className="flex gap-2 mb-6 border-b border-gray-200 overflow-x-auto pb-2">

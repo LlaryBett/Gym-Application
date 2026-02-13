@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import toast from 'react-hot-toast';
 import Button from '../components/Button';
 import { Link } from 'react-router-dom';
 import { membershipService } from '../services/membershipService';
@@ -50,14 +51,13 @@ const Membership = () => {
       });
 
       if (response.success) {
-        // Show success message or redirect to success page
-        alert('Membership purchased successfully!');
+        toast.success('Membership purchased successfully!');
         // You could also redirect to dashboard
         // window.location.href = '/dashboard';
       }
     } catch (err) {
       console.error('Purchase failed:', err);
-      alert('Failed to purchase membership. Please try again.');
+      toast.error('Failed to purchase membership. Please try again.');
     }
   };
 
@@ -108,7 +108,7 @@ const Membership = () => {
   }
 
   return (
-    <div className="pt-4 md:pt-20">
+    <div>
       {/* Hero / Header Section */}
       <section className="relative py-8 md:py-12 bg-gradient-to-b from-white to-gray-50">
         <div className="container mx-auto px-4 md:px-16">

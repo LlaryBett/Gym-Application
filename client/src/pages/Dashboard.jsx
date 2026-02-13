@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
+import toast from 'react-hot-toast';
 import { useAuth } from '../hooks/authHooks';
 import { bookingService } from '../services/bookingService';
 import CTA from '../components/CTA';
@@ -135,7 +136,7 @@ export default function Dashboard() {
   // ==================== CANCEL BOOKING ====================
   const handleCancelBooking = async () => {
     if (!cancellationReason.trim()) {
-      alert('Please provide a reason for cancellation');
+      toast.error('Please provide a reason for cancellation');
       return;
     }
 
@@ -151,10 +152,11 @@ export default function Dashboard() {
         setSelectedBooking(null);
         setCancellationReason('');
         fetchAllBookings();
+        toast.success('Booking cancelled successfully');
       }
     } catch (err) {
       console.error('Cancel booking error:', err);
-      alert('Failed to cancel booking. Please try again.');
+      toast.error('Failed to cancel booking. Please try again.');
     } finally {
       setCancelling(false);
     }
@@ -176,10 +178,11 @@ export default function Dashboard() {
         setRescheduleData({ new_date: '', new_time: '' });
         setAvailableTimeSlots([]); // ✅ Clear slots
         fetchAllBookings();
+        toast.success('Booking rescheduled successfully');
       }
     } catch (err) {
       console.error('Reschedule booking error:', err);
-      alert('Failed to reschedule booking. Please try again.');
+      toast.error('Failed to reschedule booking. Please try again.');
     } finally {
       setLoading(false);
     }
@@ -203,10 +206,11 @@ export default function Dashboard() {
         setSelectedBooking(null);
         setFeedbackData({ rating: 5, review: '', would_recommend: true });
         fetchAllBookings();
+        toast.success('Feedback submitted successfully');
       }
     } catch (err) {
       console.error('Submit feedback error:', err);
-      alert('Failed to submit feedback. Please try again.');
+      toast.error('Failed to submit feedback. Please try again.');
     } finally {
       setLoading(false);
     }
@@ -731,7 +735,7 @@ export default function Dashboard() {
   );
 
   return (
-    <div className="pt-4 md:pt-24 py-8 md:py-16">
+    <div className="py-8 md:py-16">
       <div className="container mx-auto px-4 md:px-16">
         
         {/* Success Message */}

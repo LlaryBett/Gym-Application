@@ -104,7 +104,7 @@ const ProgramsEvents = () => {
   }
 
   return (
-    <div className="pt-14 md:pt-20">
+    <div>
       {/* ================= PROGRAMS GRID ================= */}
       <section className="py-8 md:py-16 bg-white">
         <div className="max-w-7xl mx-auto px-4 md:px-16">
