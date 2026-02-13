@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react'
+import toast from 'react-hot-toast'
 import Button from '../components/Button'
 import { FaPhoneAlt, FaEnvelope, FaMapMarkerAlt, FaCheckCircle, FaExclamationTriangle } from 'react-icons/fa'
 import { useNavigate, Link } from 'react-router-dom'
@@ -28,7 +29,6 @@ const MemberRegistration = () => {
 
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState('')
-  const [success, setSuccess] = useState('')
 
   useEffect(() => {
     if (isAuthenticated) {
@@ -59,7 +59,6 @@ const MemberRegistration = () => {
     e.preventDefault()
     setLoading(true)
     setError('')
-    setSuccess('')
 
     try {
       const registrationData = {
@@ -101,12 +100,17 @@ const MemberRegistration = () => {
         hearAboutUs: ''
       })
 
+      // Show success toast
+      toast.success('Registration submitted successfully!')
+
       // Navigate immediately with response data
       navigate('/thank-you', { state: { data: response.data } })
 
     } catch (err) {
       console.error('Registration error:', err)
-      setError(err.message || 'Failed to submit registration. Please try again.')
+      const errorMessage = err.message || 'Failed to submit registration. Please try again.'
+      setError(errorMessage)
+      toast.error(errorMessage)
     } finally {
       setLoading(false)
     }
@@ -143,7 +147,7 @@ const MemberRegistration = () => {
           </p>
         </div>
 
-        {/* Error Message */}
+        {/* Error Message - Still shown for accessibility */}
         {error && (
           <div className="max-w-4xl mx-auto mb-6">
             <div className="bg-red-50 border border-red-200 rounded-lg p-4 flex items-center gap-3">

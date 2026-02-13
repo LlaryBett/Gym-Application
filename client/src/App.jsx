@@ -1,4 +1,5 @@
 import { Routes, Route } from 'react-router-dom'
+import { Toaster } from 'react-hot-toast'
 import Header from './components/Header'
 import Footer from './components/Footer'
 import Home from './pages/Home'
@@ -12,16 +13,34 @@ import Trainers from './pages/Trainers'
 import ProgramsEvents from './pages/ProgramsEvents'
 import MemberRegistration from './components/MemberRegistration'
 import ProgramDetail from './pages/ProgramDetail'
-import AuthProvider from './context/authContext.jsx' // added
-import ThankYou from './components/ThankYou' // added
+import AuthProvider from './context/authContext.jsx'
+import ThankYou from './components/ThankYou'
 import Login from './components/Login'
-import BookService from './pages/BookService';
-import Dashboard from './pages/Dashboard';
-import Profile from './pages/Profile.jsx';
+import BookService from './pages/BookService'
+import Dashboard from './pages/Dashboard'
+import Profile from './pages/Profile.jsx'
+
 function App() {
   return (
-    <div className="App pt-12 md:pt-20">
+    <div className="App pt-16 md:pt-20">
       <AuthProvider>
+
+        <Toaster
+          position="top-right"
+          reverseOrder={false}
+          gutter={8}
+          toastOptions={{
+            duration: 3000,
+            className: 'custom-toast',
+            success: {
+              className: 'custom-toast success-toast',
+            },
+            error: {
+              className: 'custom-toast error-toast',
+            },
+          }}
+        />
+
         <Header />
         
         <main className="flex-grow">
@@ -39,7 +58,6 @@ function App() {
             <Route path="/book-service/:id" element={<BookService />} />
             <Route path="/dashboard" element={<Dashboard />} />
             <Route path="/profile" element={<Profile />} />
-            {/* Add more routes as needed */}
           </Routes>
         </main>
         

@@ -69,3 +69,40 @@
 .animate-fade-in {
   animation: fade-in 0.2s ease-out;
 }
+
+/* Base toast style */
+.custom-toast {
+  position: relative;
+  background: #1f2937;
+  color: #ffffff;
+  border-radius: 10px;
+  padding: 14px 16px;
+  overflow: hidden;
+}
+
+/* Progress bar */
+.custom-toast::after {
+  content: "";
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  height: 4px;
+  width: 100%;
+  animation: progress 3s linear forwards;
+}
+
+/* Success = green bar */
+.success-toast::after {
+  background: #10b981;
+}
+
+/* Error = red bar */
+.error-toast::after {
+  background: #ef4444;
+}
+
+/* Shrinking animation */
+@keyframes progress {
+  from { width: 100%; }
+  to { width: 0%; }
+}

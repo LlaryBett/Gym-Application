@@ -125,7 +125,7 @@ export default function Services() {
   return (
     <div>
       {/* ================= HERO ================= */}
-      <section className="py-8 md:py-16 bg-gradient-to-b from-white to-gray-50">
+      <section className="py-4 md:py-8 bg-gradient-to-b from-white to-gray-50">
         <div className="max-w-7xl mx-auto px-4 md:px-16 text-center">
           <h1 className="text-3xl md:text-4xl lg:text-5xl font-bold mb-4">
             Our <span className="text-orange-500">Services</span>

@@ -1,4 +1,5 @@
 import React, { useState } from 'react'
+import toast from 'react-hot-toast'
 import { Link, useNavigate } from 'react-router-dom'
 import { FaEnvelope, FaIdCard } from 'react-icons/fa'
 import Button from './Button'
@@ -30,18 +31,20 @@ const Login = () => {
     setError('')
 
     try {
-      // Send data with the correct field names that backend expects
       const loginData = {
         email: formData.email,
-        membership_number: formData.membershipNumber, // Backend expects 'membership_number'
-        remember_me: formData.rememberMe // Backend expects 'remember_me'
+        membership_number: formData.membershipNumber,
+        remember_me: formData.rememberMe
       }
       
       await login(loginData)
+      toast.success('Login successful! Redirecting...')
       navigate('/')
     } catch (err) {
       console.error('Login error:', err)
-      setError(err.message || 'Invalid email or membership number. Please try again.')
+      const errorMessage = err.message || 'Invalid email or membership number. Please try again.'
+      setError(errorMessage)
+      toast.error(errorMessage)
     } finally {
       setLoading(false)
     }
@@ -64,7 +67,7 @@ const Login = () => {
         {/* Login Card */}
         <div className="bg-white rounded-xl shadow-lg p-6 md:p-8">
           
-          {/* Error Message */}
+          {/* Error Message - Still shown for accessibility */}
           {error && (
             <div className="mb-6 bg-red-50 border border-red-200 rounded-lg p-4">
               <p className="text-red-600 text-sm">{error}</p>

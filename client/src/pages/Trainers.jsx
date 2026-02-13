@@ -125,7 +125,7 @@ export default function Trainers() {
   const displayTrainers = trainers.length > 0 ? trainers : [];
 
   return (
-    <div className="pt-4 md:pt-24 py-8 md:py-16">
+    <div className="py-8 md:py-12">
       <div className="container mx-auto px-4 md:px-16">
         {/* Top Row — 3 columns */}
         <div className="flex flex-col lg:flex-row items-start justify-between mb-8 md:mb-12 gap-4 md:gap-6">

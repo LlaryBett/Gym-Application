@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useParams, Link, useNavigate } from 'react-router-dom';
+import toast from 'react-hot-toast';
 import { 
   FaCalendarAlt, FaClock, FaUsers, FaCheckCircle, FaArrowLeft, FaTimes,
   FaHeart, FaRegHeart, FaShare, FaFacebook, FaTwitter, FaWhatsapp, FaEnvelope,
@@ -101,13 +102,15 @@ const ProgramDetail = () => {
       if (isSaved) {
         await programService.unsaveProgram(parseInt(id));
         setIsSaved(false);
+        toast.success('Program removed from saved');
       } else {
         await programService.saveProgram(parseInt(id));
         setIsSaved(true);
+        toast.success('Program saved successfully');
       }
     } catch (err) {
       console.error('Failed to save/unsave program:', err);
-      alert('Failed to update saved status. Please try again.');
+      toast.error('Failed to update saved status. Please try again.');
     }
   };
 
@@ -123,7 +126,7 @@ const ProgramDetail = () => {
     }
 
     if (!selectedStartDate) {
-      alert('Please select a start date');
+      toast.error('Please select a start date');
       return;
     }
 
@@ -141,9 +144,9 @@ const ProgramDetail = () => {
       console.error('Enrollment failed:', err);
       if (err.message === 'Already enrolled in this program') {
         setEnrolled(true);
-        alert('You are already enrolled in this program');
+        toast.error('You are already enrolled in this program');
       } else {
-        alert('Failed to enroll. Please try again.');
+        toast.error('Failed to enroll. Please try again.');
       }
     } finally {
       setEnrolling(false);
@@ -161,7 +164,7 @@ const ProgramDetail = () => {
       email: `mailto:?subject=${encodeURIComponent(program?.title)}&body=${encodeURIComponent(text + '\n\n' + url)}`,
       copy: () => {
         navigator.clipboard.writeText(url);
-        alert('Link copied to clipboard!');
+        toast.success('Link copied to clipboard!');
       }
     };
     
