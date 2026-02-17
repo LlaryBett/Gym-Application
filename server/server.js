@@ -82,20 +82,25 @@ import programRoutes from './src/routes/programRoutes.js';
 // Apply rate limiting to API routes
 app.use('/api/', apiLimiter);
 
-// Public routes (no authentication required)
+// ==================== PUBLIC ROUTES ====================
+// These routes have NO authentication middleware applied
+// Authentication is handled internally by the route files if needed
+
 app.use('/api/auth', authRoutes);
 app.use('/api/members/register', registrationLimiter);
-app.use('/api/programs', programRoutes); // Public routes first
+app.use('/api/programs', programRoutes);
+app.use('/api/trainers', trainerRoutes); // REMOVED authMiddleware - trainers.js handles its own auth
+app.use('/api/services', serviceRoutes); // Check if serviceRoutes has its own auth handling
+app.use('/api/memberships', membershipRoutes); // Check if membershipRoutes has its own auth handling
 
-// Protected routes (authentication required)
+// ==================== PROTECTED ROUTES ====================
+// These routes require authentication for ALL endpoints
+
 app.use('/api/members', authMiddleware, memberRoutes);
-app.use('/api/trainers', authMiddleware, trainerRoutes);
-app.use('/api/services', serviceRoutes);
-app.use('/api/bookings', bookingRoutes);
-app.use('/api/memberships', membershipRoutes);
+app.use('/api/bookings', authMiddleware, bookingRoutes);
 
-
-// Admin routes (authentication + admin role required)
+// ==================== ADMIN ROUTES ====================
+// Uncomment if you have admin routes
 // app.use('/api/admin', authMiddleware, adminMiddleware, adminRoutes);
 
 // Health check endpoint
