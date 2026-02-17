@@ -1,142 +1,307 @@
 import express from 'express';
-import cors from 'cors';
-import dotenv from 'dotenv';
-import helmet from 'helmet';
-import morgan from 'morgan';
-import path from 'path';
-import { fileURLToPath } from 'url';
-import session from 'express-session';
-import pgSession from 'connect-pg-simple';
-import pool from './src/database/db.js';
+import {
+    // Public routes
+    getAllPrograms,
+    getProgramById,
+    getFeaturedPrograms,
+    getProgramsByCategory,
+    getScheduleByDay,
+    getAllSchedules,
+    getProgramCategories,
+    
+    // Member routes (require auth)
+    enrollInProgram,
+    getMyEnrollments,
+    saveProgram,
+    unsaveProgram,
+    getMySavedPrograms,
+    
+    // Admin routes
+    createProgram,
+    updateProgram,
+    deleteProgram,
+    createSchedule,
+    updateSchedule,
+    deleteSchedule,
+    getProgramStats,
+    
+    // Admin - New feature routes
+    addGalleryImage,
+    removeGalleryImage,
+    addCurriculumWeek,
+    updateCurriculumWeek,
+    removeCurriculumWeek,
+    addFaq,
+    updateFaq,
+    removeFaq,
+    addStartDate,
+    updateStartDate,
+    removeStartDate,
+    addRelatedProgram,
+    removeRelatedProgram,
+    addUpgradeOption,
+    removeUpgradeOption
+} from '../controllers/programController.js';
+import { authMiddleware, adminMiddleware } from '../middleware/auth.js';
 
-dotenv.config();
-
-const __filename = fileURLToPath(import.meta.url);
-const __dirname = path.dirname(__filename);
-
-const app = express();
-
-// Session store setup
-const PgSession = pgSession(session);
-
-// Security middleware
-app.use(helmet({
-  contentSecurityPolicy: {
-    directives: {
-      defaultSrc: ["'self'"],
-      styleSrc: ["'self'", "'unsafe-inline'"],
-      scriptSrc: ["'self'"],
-      imgSrc: ["'self'", "data:", "https:"]
-    }
-  },
-  crossOriginEmbedderPolicy: false
-}));
-
-// CORS configuration
-app.use(cors({
-  origin: process.env.APP_URL || ['http://localhost:3000', 'http://localhost:5173'],
-  credentials: true,
-  methods: ['GET', 'POST', 'PUT', 'DELETE', 'PATCH', 'OPTIONS'],
-  allowedHeaders: ['Content-Type', 'Authorization', 'X-Requested-With', 'Cookie']
-}));
-
-// Session middleware
-app.use(session({
-  store: new PgSession({
-    pool: pool,
-    tableName: 'session',
-    createTableIfMissing: true
-  }),
-  secret: process.env.SESSION_SECRET || 'your-secret-key-change-this',
-  resave: false,
-  saveUninitialized: false,
-  cookie: {
-    secure: process.env.NODE_ENV === 'production',
-    httpOnly: true,
-    maxAge: 24 * 60 * 60 * 1000, // 24 hours
-    sameSite: process.env.NODE_ENV === 'production' ? 'none' : 'lax'
-  }
-}));
-
-// Logging middleware
-app.use(morgan('combined'));
-
-// Body parsing middleware
-app.use(express.json({ limit: '10mb' }));
-app.use(express.urlencoded({ extended: true, limit: '10mb' }));
-
-// Import middleware after env is configured
-const { globalErrorHandler, notFound } = await import('./src/middleware/errorHandler.js');
-const { apiLimiter, registrationLimiter, loginLimiter } = await import('./src/middleware/rateLimiter.js');
-const { authMiddleware, adminMiddleware } = await import('./src/middleware/auth.js');
-
-// Import routes
-import authRoutes from './src/routes/authRoutes.js';
-import memberRoutes from './src/routes/members.js';
-import trainerRoutes from './src/routes/trainers.js';
-import serviceRoutes from './src/routes/serviceRoutes.js';
-import bookingRoutes from './src/routes/bookingRoutes.js';
-import membershipRoutes from './src/routes/membershipRoutes.js';
-import programRoutes from './src/routes/programRoutes.js';
-
-// Apply rate limiting to API routes
-app.use('/api/', apiLimiter);
+const router = express.Router();
 
 // ==================== PUBLIC ROUTES ====================
-// These routes have NO authentication middleware applied
-// Authentication is handled internally by the route files if needed
+// These routes do NOT require authentication
+// 🔴 SPECIFIC ROUTES MUST COME BEFORE DYNAMIC /:id ROUTE
 
-app.use('/api/auth', authRoutes);
-app.use('/api/members/register', registrationLimiter);
-app.use('/api/programs', programRoutes);
-app.use('/api/trainers', trainerRoutes); // REMOVED authMiddleware - trainers.js handles its own auth
-app.use('/api/services', serviceRoutes); // Check if serviceRoutes has its own auth handling
-app.use('/api/memberships', membershipRoutes); // Check if membershipRoutes has its own auth handling
+/**
+ * @route   GET /api/programs
+ * @desc    Get all programs with optional filters and pagination
+ * @access  Public
+ */
+router.get('/', getAllPrograms);
 
-// ==================== PROTECTED ROUTES ====================
-// These routes require authentication for ALL endpoints
+/**
+ * @route   GET /api/programs/featured
+ * @desc    Get featured programs for homepage
+ * @access  Public
+ */
+router.get('/featured', getFeaturedPrograms);
 
-app.use('/api/members', authMiddleware, memberRoutes);
-app.use('/api/bookings', authMiddleware, bookingRoutes);
+/**
+ * @route   GET /api/programs/categories
+ * @desc    Get all program categories
+ * @access  Public
+ */
+router.get('/categories', getProgramCategories);
 
-// ==================== ADMIN ROUTES ====================
-// Uncomment if you have admin routes
-// app.use('/api/admin', authMiddleware, adminMiddleware, adminRoutes);
+/**
+ * @route   GET /api/programs/schedules
+ * @desc    Get all program schedules
+ * @access  Public
+ */
+router.get('/schedules', getAllSchedules);
 
-// Health check endpoint
-app.get('/api/health', (req, res) => {
-  res.status(200).json({
-    success: true,
-    status: 'OK',
-    timestamp: new Date().toISOString(),
-    service: 'Gym Management API',
-    environment: process.env.NODE_ENV,
-    version: '1.0.0',
-    session: req.sessionID ? 'Session enabled' : 'No session'
-  });
-});
+/**
+ * @route   GET /api/programs/schedules/:day
+ * @desc    Get schedule by specific day
+ * @access  Public
+ */
+router.get('/schedules/:day', getScheduleByDay);
 
-// Session test endpoint (for debugging)
-app.get('/api/session-test', (req, res) => {
-  res.status(200).json({
-    success: true,
-    sessionId: req.sessionID,
-    sessionData: req.session,
-    authenticated: req.session.isAuthenticated || false,
-    user: req.session.user || null
-  });
-});
+/**
+ * @route   GET /api/programs/category/:category
+ * @desc    Get programs by category
+ * @access  Public
+ */
+router.get('/category/:category', getProgramsByCategory);
 
-// 404 handler
-app.use(notFound);
+/**
+ * @route   GET /api/programs/stats
+ * @desc    Get program statistics
+ * @access  Public
+ */
+router.get('/stats', getProgramStats);
 
-// Global error handler
-app.use(globalErrorHandler);
+/**
+ * @route   GET /api/programs/:id
+ * @desc    Get a single program by ID
+ * @access  Public
+ */
+router.get('/:id', getProgramById);
 
-const PORT = process.env.PORT || 5000;
-app.listen(PORT, () => {
-  console.log(`✅ Server running on http://localhost:${PORT}`);
-  console.log(`📝 Environment: ${process.env.NODE_ENV || 'development'}`);
-  console.log(`🌐 CORS enabled for: ${process.env.APP_URL || 'http://localhost:3000, http://localhost:5173'}`);
-  console.log(`🔐 Session storage: PostgreSQL`);
-});
+// ==================== PROTECTED ROUTES (Require Authentication) ====================
+// All routes after this middleware require authentication
+router.use(authMiddleware);
+
+/**
+ * @route   POST /api/programs/enroll
+ * @desc    Enroll in a program
+ * @access  Private (Any authenticated user)
+ */
+router.post('/enroll', enrollInProgram);
+
+/**
+ * @route   GET /api/programs/my-enrollments
+ * @desc    Get current user's program enrollments
+ * @access  Private
+ */
+router.get('/my-enrollments', getMyEnrollments);
+
+/**
+ * @route   GET /api/programs/my/saved
+ * @desc    Get current user's saved programs (wishlist)
+ * @access  Private
+ */
+router.get('/my/saved', getMySavedPrograms);
+
+/**
+ * @route   POST /api/programs/:id/save
+ * @desc    Save a program to user's wishlist
+ * @access  Private
+ */
+router.post('/:id/save', saveProgram);
+
+/**
+ * @route   DELETE /api/programs/:id/save
+ * @desc    Remove a program from user's wishlist
+ * @access  Private
+ */
+router.delete('/:id/save', unsaveProgram);
+
+// ==================== ADMIN ONLY ROUTES ====================
+// All routes after this require admin privileges
+// Note: authMiddleware is already applied above, so we only need adminMiddleware
+
+// ===== Program Management =====
+/**
+ * @route   POST /api/programs
+ * @desc    Create a new program
+ * @access  Private (Admin only)
+ */
+router.post('/', adminMiddleware, createProgram);
+
+/**
+ * @route   PUT /api/programs/:id
+ * @desc    Update an existing program
+ * @access  Private (Admin only)
+ */
+router.put('/:id', adminMiddleware, updateProgram);
+
+/**
+ * @route   DELETE /api/programs/:id
+ * @desc    Delete a program (soft delete)
+ * @access  Private (Admin only)
+ */
+router.delete('/:id', adminMiddleware, deleteProgram);
+
+// ===== Schedule Management =====
+/**
+ * @route   POST /api/programs/schedules
+ * @desc    Create a new schedule
+ * @access  Private (Admin only)
+ */
+router.post('/schedules', adminMiddleware, createSchedule);
+
+/**
+ * @route   PUT /api/programs/schedules/:id
+ * @desc    Update a schedule
+ * @access  Private (Admin only)
+ */
+router.put('/schedules/:id', adminMiddleware, updateSchedule);
+
+/**
+ * @route   DELETE /api/programs/schedules/:id
+ * @desc    Delete a schedule
+ * @access  Private (Admin only)
+ */
+router.delete('/schedules/:id', adminMiddleware, deleteSchedule);
+
+// ===== Gallery Management =====
+/**
+ * @route   POST /api/programs/:programId/gallery
+ * @desc    Add an image to program gallery
+ * @access  Private (Admin only)
+ */
+router.post('/:programId/gallery', adminMiddleware, addGalleryImage);
+
+/**
+ * @route   DELETE /api/programs/gallery/:imageId
+ * @desc    Remove an image from program gallery
+ * @access  Private (Admin only)
+ */
+router.delete('/gallery/:imageId', adminMiddleware, removeGalleryImage);
+
+// ===== Curriculum Management =====
+/**
+ * @route   POST /api/programs/:programId/curriculum
+ * @desc    Add a curriculum week to a program
+ * @access  Private (Admin only)
+ */
+router.post('/:programId/curriculum', adminMiddleware, addCurriculumWeek);
+
+/**
+ * @route   PUT /api/programs/curriculum/:id
+ * @desc    Update a curriculum week
+ * @access  Private (Admin only)
+ */
+router.put('/curriculum/:id', adminMiddleware, updateCurriculumWeek);
+
+/**
+ * @route   DELETE /api/programs/curriculum/:id
+ * @desc    Remove a curriculum week
+ * @access  Private (Admin only)
+ */
+router.delete('/curriculum/:id', adminMiddleware, removeCurriculumWeek);
+
+// ===== FAQ Management =====
+/**
+ * @route   POST /api/programs/:programId/faqs
+ * @desc    Add an FAQ to a program
+ * @access  Private (Admin only)
+ */
+router.post('/:programId/faqs', adminMiddleware, addFaq);
+
+/**
+ * @route   PUT /api/programs/faqs/:id
+ * @desc    Update an FAQ
+ * @access  Private (Admin only)
+ */
+router.put('/faqs/:id', adminMiddleware, updateFaq);
+
+/**
+ * @route   DELETE /api/programs/faqs/:id
+ * @desc    Remove an FAQ
+ * @access  Private (Admin only)
+ */
+router.delete('/faqs/:id', adminMiddleware, removeFaq);
+
+// ===== Start Dates Management =====
+/**
+ * @route   POST /api/programs/:programId/start-dates
+ * @desc    Add a start date to a program
+ * @access  Private (Admin only)
+ */
+router.post('/:programId/start-dates', adminMiddleware, addStartDate);
+
+/**
+ * @route   PUT /api/programs/start-dates/:id
+ * @desc    Update a start date (spots available)
+ * @access  Private (Admin only)
+ */
+router.put('/start-dates/:id', adminMiddleware, updateStartDate);
+
+/**
+ * @route   DELETE /api/programs/start-dates/:id
+ * @desc    Remove a start date
+ * @access  Private (Admin only)
+ */
+router.delete('/start-dates/:id', adminMiddleware, removeStartDate);
+
+// ===== Related Programs Management =====
+/**
+ * @route   POST /api/programs/:programId/related
+ * @desc    Add a related program
+ * @access  Private (Admin only)
+ */
+router.post('/:programId/related', adminMiddleware, addRelatedProgram);
+
+/**
+ * @route   DELETE /api/programs/:programId/related/:relatedProgramId
+ * @desc    Remove a related program
+ * @access  Private (Admin only)
+ */
+router.delete('/:programId/related/:relatedProgramId', adminMiddleware, removeRelatedProgram);
+
+// ===== Upgrade Options Management =====
+/**
+ * @route   POST /api/programs/:programId/upgrades
+ * @desc    Add an upgrade option to a program
+ * @access  Private (Admin only)
+ */
+router.post('/:programId/upgrades', adminMiddleware, addUpgradeOption);
+
+/**
+ * @route   DELETE /api/programs/:programId/upgrades/:upgradeProgramId
+ * @desc    Remove an upgrade option
+ * @access  Private (Admin only)
+ */
+router.delete('/:programId/upgrades/:upgradeProgramId', adminMiddleware, removeUpgradeOption);
+
+export default router;
