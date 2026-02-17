@@ -99,6 +99,13 @@ router.get('/category/:category', getProgramsByCategory);
  */
 router.get('/stats', getProgramStats);
 
+/**
+ * @route   GET /api/programs/:id
+ * @desc    Get a single program by ID
+ * @access  Public
+ */
+router.get('/:id', getProgramById);
+
 // ==================== PROTECTED ROUTES (Require Authentication) ====================
 // All routes after this middleware require authentication
 router.use(authMiddleware);
@@ -137,15 +144,6 @@ router.post('/:id/save', saveProgram);
  * @access  Private
  */
 router.delete('/:id/save', unsaveProgram);
-
-// ==================== DYNAMIC PROGRAM ID ROUTE ====================
-// 🔴 THIS MUST COME AFTER ALL SPECIFIC ROUTES
-/**
- * @route   GET /api/programs/:id
- * @desc    Get a single program by ID
- * @access  Public
- */
-router.get('/:id', getProgramById);
 
 // ==================== ADMIN ONLY ROUTES ====================
 // All routes after this require admin privileges
