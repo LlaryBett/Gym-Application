@@ -124,20 +124,38 @@ export const login = async (req, res) => {
     // Store in session if available
     if (req.session) {
       req.session.user = userData;
-      req.session.isAuthenticated = true;
+      req.session.isAuthenticated = true; // ← CRITICAL: This was missing!
       
       if (remember_me) {
         req.session.cookie.maxAge = 30 * 24 * 60 * 60 * 1000; // 30 days
       }
-    }
 
-    res.status(200).json({
-      success: true,
-      message: 'Login successful',
-      data: {
-        user: userData
-      }
-    });
+      // ← ADDED: Save session explicitly before responding
+      req.session.save((err) => {
+        if (err) {
+          console.error('Session save error:', err);
+          return res.status(500).json({
+            success: false,
+            message: 'Error creating session. Please try again.'
+          });
+        }
+
+        // Send response only after session is confirmed saved
+        res.status(200).json({
+          success: true,
+          message: 'Login successful',
+          data: {
+            user: userData
+          }
+        });
+      });
+    } else {
+      // If no session (shouldn't happen), return error
+      res.status(500).json({
+        success: false,
+        message: 'Session not initialized'
+      });
+    }
   } catch (error) {
     console.error('Login error:', error);
     res.status(500).json({
@@ -148,43 +166,11 @@ export const login = async (req, res) => {
   }
 };
 
-// Logout current user
-export const logout = async (req, res) => {
-  try {
-    if (req.session) {
-      req.session.destroy((err) => {
-        if (err) {
-          return res.status(500).json({
-            success: false,
-            message: 'Could not log out. Please try again.'
-          });
-        }
-        res.clearCookie('connect.sid');
-        res.status(200).json({
-          success: true,
-          message: 'Logged out successfully'
-        });
-      });
-    } else {
-      res.status(200).json({
-        success: true,
-        message: 'Logged out successfully'
-      });
-    }
-  } catch (error) {
-    console.error('Logout error:', error);
-    res.status(500).json({
-      success: false,
-      message: 'Internal server error'
-    });
-  }
-};
-
-// Get current authenticated user
 // Get current authenticated user
 export const getCurrentUser = async (req, res) => {
   try {
-    if (!req.session || !req.session.user) {
+    // ← UPDATED: Check both user AND isAuthenticated flag
+    if (!req.session || !req.session.user || !req.session.isAuthenticated) {
       return res.status(401).json({
         success: false,
         message: 'Not authenticated'
@@ -194,11 +180,23 @@ export const getCurrentUser = async (req, res) => {
     const member = await Member.findById(req.session.user.id);
 
     if (!member) {
+      // ← ADDED: Clear invalid session
+      req.session.destroy();
       return res.status(404).json({
         success: false,
         message: 'User not found'
       });
     }
+
+    // ← ADDED: Update session with latest data (optional but good practice)
+    req.session.user = {
+      id: member.id,
+      membershipNumber: member.membership_number,
+      name: `${member.first_name} ${member.last_name}`.trim(),
+      email: member.email,
+      phone: member.cell_phone,
+      status: member.status
+    };
 
     res.status(200).json({
       success: true,
@@ -244,3 +242,36 @@ export const getCurrentUser = async (req, res) => {
     });
   }
 };
+
+// Logout current user
+export const logout = async (req, res) => {
+  try {
+    if (req.session) {
+      req.session.destroy((err) => {
+        if (err) {
+          return res.status(500).json({
+            success: false,
+            message: 'Could not log out. Please try again.'
+          });
+        }
+        res.clearCookie('connect.sid');
+        res.status(200).json({
+          success: true,
+          message: 'Logged out successfully'
+        });
+      });
+    } else {
+      res.status(200).json({
+        success: true,
+        message: 'Logged out successfully'
+      });
+    }
+  } catch (error) {
+    console.error('Logout error:', error);
+    res.status(500).json({
+      success: false,
+      message: 'Internal server error'
+    });
+  }
+};
+
