@@ -47,7 +47,7 @@ export default function Header() {
             to="/"
             onClick={() => setIsMenuOpen(false)}
           >
-            <div className="w-8 h-8 sm:w-10 sm:h-10 bg-orange-500 rounded-full flex-shrink-0" />
+            <img src="/PowerGym-Logo (1).svg" alt="PowerGym Logo" className="w-8 h-8 sm:w-10 sm:h-10 rounded-full flex-shrink-0" />
             <span className="text-lg sm:text-xl md:text-2xl font-heading font-bold text-black-900 whitespace-nowrap">
               Power<span className="text-orange-500">Gym</span>
             </span>
