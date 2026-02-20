@@ -208,25 +208,52 @@ export const enrollInProgram = async (req, res) => {
     }
 };
 
-// Get my enrolled programs
+// In programController.js
 export const getMyEnrollments = async (req, res) => {
-    try {
-        const memberId = req.session.user.id;
-        const enrollments = await Program.getMemberEnrollments(memberId);
-
-        res.json({
-            success: true,
-            data: enrollments
-        });
-    } catch (error) {
-        console.error('Get enrollments error:', error);
-        res.status(500).json({
-            success: false,
-            message: 'Failed to fetch enrollments'
-        });
+  try {
+    console.log('========== GET MY ENROLLMENTS ==========');
+    console.log('Session user:', req.session?.user);
+    
+    if (!req.session?.user?.id) {
+      console.log('❌ No user ID in session');
+      return res.status(401).json({
+        success: false,
+        message: 'Not authenticated'
+      });
     }
-};
 
+    const memberId = req.session.user.id;
+    console.log('Fetching enrollments for member ID:', memberId);
+    
+    // Check if the model method exists
+    console.log('Program.getMemberEnrollments type:', typeof Program.getMemberEnrollments);
+    
+    const enrollments = await Program.getMemberEnrollments(memberId);
+    console.log('Raw enrollments from model:', enrollments);
+    
+    console.log('✅ Successfully fetched enrollments');
+    console.log('========================================');
+    
+    res.json({
+      success: true,
+      data: enrollments || []
+    });
+    
+  } catch (error) {
+    console.error('❌ ERROR in getMyEnrollments:', error);
+    console.error('Error name:', error.name);
+    console.error('Error message:', error.message);
+    console.error('Error stack:', error.stack);
+    if (error.code) console.error('Error code:', error.code);
+    if (error.detail) console.error('Error detail:', error.detail);
+    
+    res.status(500).json({
+      success: false,
+      message: 'Failed to fetch enrollments',
+      error: process.env.NODE_ENV === 'development' ? error.message : undefined
+    });
+  }
+};
 // ==================== SAVED PROGRAMS (WISHLIST) ====================
 
 // Save program

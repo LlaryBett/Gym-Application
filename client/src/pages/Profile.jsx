@@ -8,7 +8,7 @@ import {
   FaSignOutAlt, FaChevronRight, FaStar, FaRegStar, FaTrash, FaTimes,
   FaGenderless, FaUserTag, FaInfoCircle, FaExclamationTriangle
 } from 'react-icons/fa';
-import { useAuth } from '../hooks/authHooks';
+import { useAuth, useProtectedRoute } from '../hooks/authHooks'; // ✅ Updated import
 import { authAPI, memberAPI } from '../services/api';
 import { membershipService } from '../services/membershipService';
 import { programService } from '../services/programService';
@@ -17,7 +17,7 @@ import CTA from '../components/CTA';
 
 const Profile = () => {
   const navigate = useNavigate();
-  const { user } = useAuth();
+  const { user } = useProtectedRoute(navigate); // ✅ This handles redirect on refresh
   
   // ===== STATE =====
   const [activeTab, setActiveTab] = useState('overview');
@@ -39,95 +39,138 @@ const Profile = () => {
   const [isSubmitting, setIsSubmitting] = useState(false);
 
   useEffect(() => {
-    if (!user) {
-      navigate('/login', { state: { from: '/profile' } });
-      return;
+    if (user) {
+      fetchAllProfileData();
     }
-    fetchAllProfileData();
-  }, [user]);
+  }, [user]); // ✅ Only fetch if user exists
 
-  const fetchAllProfileData = async () => {
-    try {
-      setLoading(true);
+ const fetchAllProfileData = async () => {
+  try {
+    setLoading(true);
+    console.log('🔍 Starting to fetch profile data for user:', user?.id);
+    
+    // Test each endpoint individually first
+    console.log('📡 Fetching profile...');
+    const profileRes = await authAPI.getCurrentUser();
+    console.log('✅ Profile response:', profileRes);
+    
+    console.log('📡 Fetching membership...');
+    const membershipRes = await membershipService.getMyMembership().catch(err => {
+      console.error('❌ Membership fetch failed:', err);
+      return { success: false, data: null };
+    });
+    console.log('✅ Membership response:', membershipRes);
+    
+    console.log('📡 Fetching enrollments...');
+    const enrollmentsRes = await programService.getMyEnrollments().catch(err => {
+      console.error('❌ Enrollments fetch failed:', err);
+      return { success: false, data: [] };
+    });
+    console.log('✅ Enrollments response:', enrollmentsRes);
+    
+    console.log('📡 Fetching bookings...');
+    const bookingsRes = await bookingService.getUserBookings(user.id, { upcoming: true, limit: 5 }).catch(err => {
+      console.error('❌ Bookings fetch failed:', err);
+      return { success: false, data: { bookings: [] } };
+    });
+    console.log('✅ Bookings response:', bookingsRes);
+    
+    console.log('📡 Fetching saved programs...');
+    const savedRes = await programService.getMySavedPrograms().catch(err => {
+      console.error('❌ Saved programs fetch failed:', err);
+      return { success: false, data: [] };
+    });
+    console.log('✅ Saved programs response:', savedRes);
+
+    // Now process the responses
+    console.log('📊 Processing profile data...');
+    
+    if (profileRes.success && profileRes.data?.user) {
+      const userData = profileRes.data.user;
       
-      const [
-        profileRes,
-        membershipRes,
-        enrollmentsRes,
-        bookingsRes,
-        savedRes
-      ] = await Promise.all([
-        authAPI.getCurrentUser(),
-        membershipService.getMyMembership().catch(() => ({ success: false })),
-        programService.getMyEnrollments(),
-        bookingService.getUserBookings(user.id, { upcoming: true, limit: 5 }),
-        programService.getMySavedPrograms()
-      ]);
+      const nameParts = userData.name?.split(' ') || [];
+      const firstName = nameParts[0] || '';
+      const lastName = nameParts.slice(1).join(' ') || '';
+      
+      setProfile({
+        id: userData.id,
+        first_name: firstName,
+        last_name: lastName,
+        email: userData.email,
+        cell_phone: userData.phone,
+        membership_number: userData.membershipNumber,
+        status: userData.status,
+        created_at: userData.createdAt || new Date().toISOString(),
+        emergency_contact_name: userData.emergencyContact?.name || '',
+        emergency_contact_phone: userData.emergencyContact?.phone || '',
+        emergency_contact_email: userData.emergencyContact?.email || '',
+        emergency_contact_relationship: userData.emergencyContact?.relationship || ''
+      });
+      
+      setEditForm({
+        first_name: firstName,
+        last_name: lastName,
+        email: userData.email,
+        phone: userData.phone
+      });
 
-      if (profileRes.success && profileRes.data?.user) {
-        const userData = profileRes.data.user;
-        
-        // Split name into first and last
-        const nameParts = userData.name?.split(' ') || [];
-        const firstName = nameParts[0] || '';
-        const lastName = nameParts.slice(1).join(' ') || '';
-        
-        setProfile({
-          id: userData.id,
-          first_name: firstName,
-          last_name: lastName,
-          email: userData.email,
-          cell_phone: userData.phone,
-          membership_number: userData.membershipNumber,
-          status: userData.status,
-          created_at: userData.createdAt || new Date().toISOString(),
-          // Emergency contact from API response
-          emergency_contact_name: userData.emergencyContact?.name || '',
-          emergency_contact_phone: userData.emergencyContact?.phone || '',
-          emergency_contact_email: userData.emergencyContact?.email || '',
-          emergency_contact_relationship: userData.emergencyContact?.relationship || ''
-        });
-        
-        // Set edit form with current data
-        setEditForm({
-          first_name: firstName,
-          last_name: lastName,
-          email: userData.email,
-          phone: userData.phone
-        });
-
-        // Set emergency contact
-        setEmergencyContact({
-          name: userData.emergencyContact?.name || '',
-          phone: userData.emergencyContact?.phone || '',
-          email: userData.emergencyContact?.email || '',
-          relationship: userData.emergencyContact?.relationship || ''
-        });
-      }
-
-      if (membershipRes.success) {
-        setMembership(membershipRes.data);
-      }
-
-      if (enrollmentsRes.success) {
-        setEnrolledPrograms(enrollmentsRes.data || []);
-      }
-
-      if (bookingsRes.success) {
-        setUpcomingBookings(bookingsRes.data.bookings || []);
-      }
-
-      if (savedRes.success) {
-        setSavedPrograms(savedRes.data || []);
-      }
-
-    } catch (err) {
-      console.error('Failed to fetch profile data:', err);
-      setError('Failed to load profile data');
-    } finally {
-      setLoading(false);
+      setEmergencyContact({
+        name: userData.emergencyContact?.name || '',
+        phone: userData.emergencyContact?.phone || '',
+        email: userData.emergencyContact?.email || '',
+        relationship: userData.emergencyContact?.relationship || ''
+      });
+    } else {
+      console.error('❌ Profile response failed:', profileRes);
     }
-  };
+
+    if (membershipRes.success) {
+      setMembership(membershipRes.data);
+      console.log('✅ Membership set:', membershipRes.data);
+    } else {
+      console.log('ℹ️ No membership data');
+    }
+
+    if (enrollmentsRes.success) {
+      setEnrolledPrograms(enrollmentsRes.data || []);
+      console.log('✅ Enrollments set:', enrollmentsRes.data);
+    } else {
+      console.log('ℹ️ No enrollments data');
+      setEnrolledPrograms([]);
+    }
+
+    if (bookingsRes.success) {
+      setUpcomingBookings(bookingsRes.data.bookings || []);
+      console.log('✅ Bookings set:', bookingsRes.data);
+    } else {
+      console.log('ℹ️ No bookings data');
+      setUpcomingBookings([]);
+    }
+
+    if (savedRes.success) {
+      setSavedPrograms(savedRes.data || []);
+      console.log('✅ Saved programs set:', savedRes.data);
+    } else {
+      console.log('ℹ️ No saved programs data');
+      setSavedPrograms([]);
+    }
+
+    console.log('🎉 Profile data fetch complete!');
+
+  } catch (err) {
+    console.error('💥 CRITICAL ERROR in fetchAllProfileData:', err);
+    console.error('Error name:', err.name);
+    console.error('Error message:', err.message);
+    console.error('Error stack:', err.stack);
+    if (err.response) {
+      console.error('Error response:', err.response);
+    }
+    setError('Failed to load profile data');
+  } finally {
+    setLoading(false);
+    console.log('🏁 fetchAllProfileData finished, loading set to false');
+  }
+};
 
   // ✅ FIXED: Now actually updates the profile via API
   const handleEditSubmit = async (e) => {

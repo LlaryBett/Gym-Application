@@ -1,3 +1,4 @@
+// controllers/memberController.js
 import Member from '../models/Members.js';
 import { memberSchemas } from '../utils/validation.js';
 import pool from '../database/db.js';
@@ -305,3 +306,37 @@ async function getTodayRegistrations() {
     return 0;
   }
 }
+
+// Approve member membership
+export const approveMembership = async (req, res) => {
+  try {
+    const member = await Member.update(req.params.id, { 
+      status: 'active',
+      approved_at: new Date()
+    });
+    
+    if (!member) {
+      return res.status(404).json({
+        success: false,
+        message: 'Member not found'
+      });
+    }
+    
+    res.json({
+      success: true,
+      message: 'Membership approved successfully',
+      data: {
+        id: member.id,
+        name: `${member.first_name} ${member.last_name}`,
+        status: member.status,
+        approvedAt: member.approved_at
+      }
+    });
+  } catch (error) {
+    console.error('Approval error:', error);
+    res.status(500).json({
+      success: false,
+      message: 'Failed to approve membership'
+    });
+  }
+};

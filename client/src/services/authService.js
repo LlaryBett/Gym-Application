@@ -1,3 +1,4 @@
+// client/src/services/authService.js
 import api from './api';
 
 const authService = {
@@ -15,6 +16,11 @@ const authService = {
 
   getCurrentUser: async () => {
     return api.get('/auth/me');
+  },
+
+  // ✅ Add this new function
+  forgotMembership: async (email) => {
+    return api.post('/auth/forgot-membership', { email });
   }
 };
 

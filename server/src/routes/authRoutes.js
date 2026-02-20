@@ -3,7 +3,8 @@ import {
   registerMember, 
   login, 
   logout, 
-  getCurrentUser 
+  getCurrentUser,
+   forgotMembershipNumber  // Add this import
 } from '../controllers/authController.js';
 import { loginLimiter } from '../middleware/rateLimiter.js';
 
@@ -14,5 +15,6 @@ router.post('/register', registerMember);
 router.post('/login', loginLimiter, login);
 router.post('/logout', logout);
 router.get('/me', getCurrentUser);
+router.post('/forgot-membership', forgotMembershipNumber);
 
 export default router;

@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { authAPI } from '../services/api'; // Changed: import authAPI directly
+import { authAPI } from '../services/api';
 import AuthContext from '../hooks/authContextValue';
 
 export default function AuthProvider({ children }) {
@@ -7,18 +7,25 @@ export default function AuthProvider({ children }) {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
 
+  // ✅ Check auth status immediately on mount
   useEffect(() => {
     checkAuthStatus();
   }, []);
 
   const checkAuthStatus = async () => {
     try {
+      console.log('🔍 Checking auth status...');
       const response = await authAPI.getCurrentUser();
+      
       if (response.success && response.data?.user) {
+        console.log('✅ User authenticated:', response.data.user);
         setUser(response.data.user);
+      } else {
+        console.log('❌ Not authenticated');
+        setUser(null);
       }
     } catch (error) {
-      console.error('Auth verification failed:', error);
+      console.error('❌ Auth verification failed:', error);
       setUser(null);
     } finally {
       setLoading(false);

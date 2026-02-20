@@ -1,10 +1,10 @@
 import React, { useState, useEffect } from 'react'
 import toast from 'react-hot-toast'
 import Button from '../components/Button'
-import { FaPhoneAlt, FaEnvelope, FaMapMarkerAlt, FaCheckCircle, FaExclamationTriangle } from 'react-icons/fa'
+import { FaPhoneAlt, FaEnvelope, FaMapMarkerAlt, FaExclamationTriangle } from 'react-icons/fa'
 import { useNavigate, Link } from 'react-router-dom'
 import { useAuth } from '../hooks/authHooks'
-import membersService from '../services/membersService'
+import authService from '../services/authService'  // ✅ CHANGED: from membersService to authService
 
 const MemberRegistration = () => {
   const navigate = useNavigate()
@@ -33,6 +33,7 @@ const MemberRegistration = () => {
   useEffect(() => {
     if (isAuthenticated) {
       // Optional: Redirect logged-in users to dashboard
+      // navigate('/dashboard');
     }
   }, [isAuthenticated, navigate])
 
@@ -78,7 +79,8 @@ const MemberRegistration = () => {
 
       console.log('Sending registration data:', registrationData)
 
-      const response = await membersService.registerMember(registrationData)
+      // ✅ CHANGED: Using authService.register instead of membersService.registerMember
+      const response = await authService.register(registrationData)
       
       console.log('Registration successful:', response)
 
@@ -100,17 +102,20 @@ const MemberRegistration = () => {
         hearAboutUs: ''
       })
 
-      // Show success toast
-      toast.success('Registration submitted successfully!')
+      // Show success toast from backend
+      if (response.message) {
+        toast.success(response.message)
+      }
 
       // Navigate immediately with response data
       navigate('/thank-you', { state: { data: response.data } })
 
     } catch (err) {
       console.error('Registration error:', err)
-      const errorMessage = err.message || 'Failed to submit registration. Please try again.'
-      setError(errorMessage)
-      toast.error(errorMessage)
+      if (err.message) {
+        setError(err.message)
+        toast.error(err.message)
+      }
     } finally {
       setLoading(false)
     }
@@ -147,7 +152,7 @@ const MemberRegistration = () => {
           </p>
         </div>
 
-        {/* Error Message - Still shown for accessibility */}
+        {/* Error Message */}
         {error && (
           <div className="max-w-4xl mx-auto mb-6">
             <div className="bg-red-50 border border-red-200 rounded-lg p-4 flex items-center gap-3">
@@ -173,28 +178,72 @@ const MemberRegistration = () => {
               <div className="grid md:grid-cols-2 gap-6">
                 <div>
                   <label className="block text-gray-700 font-semibold mb-2">First Name *</label>
-                  <input type="text" name="firstName" value={formData.firstName} onChange={handleChange} required disabled={loading} className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-transparent transition disabled:bg-gray-50 disabled:cursor-not-allowed" placeholder="First Name" />
+                  <input 
+                    type="text" 
+                    name="firstName" 
+                    value={formData.firstName} 
+                    onChange={handleChange} 
+                    required 
+                    disabled={loading} 
+                    className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-transparent transition disabled:bg-gray-50 disabled:cursor-not-allowed" 
+                    placeholder="First Name" 
+                  />
                 </div>
                 <div>
                   <label className="block text-gray-700 font-semibold mb-2">Last Name *</label>
-                  <input type="text" name="lastName" value={formData.lastName} onChange={handleChange} required disabled={loading} className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-transparent transition disabled:bg-gray-50 disabled:cursor-not-allowed" placeholder="Last Name" />
+                  <input 
+                    type="text" 
+                    name="lastName" 
+                    value={formData.lastName} 
+                    onChange={handleChange} 
+                    required 
+                    disabled={loading} 
+                    className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-transparent transition disabled:bg-gray-50 disabled:cursor-not-allowed" 
+                    placeholder="Last Name" 
+                  />
                 </div>
               </div>
 
               <div className="grid md:grid-cols-2 gap-6 mt-6">
                 <div>
                   <label className="block text-gray-700 font-semibold mb-2">Email *</label>
-                  <input type="email" name="email" value={formData.email} onChange={handleChange} required disabled={loading} className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-transparent transition disabled:bg-gray-50 disabled:cursor-not-allowed" placeholder="Email" />
+                  <input 
+                    type="email" 
+                    name="email" 
+                    value={formData.email} 
+                    onChange={handleChange} 
+                    required 
+                    disabled={loading} 
+                    className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-transparent transition disabled:bg-gray-50 disabled:cursor-not-allowed" 
+                    placeholder="Email" 
+                  />
                 </div>
                 <div>
                   <label className="block text-gray-700 font-semibold mb-2">Cell Phone *</label>
-                  <input type="tel" name="cellPhone" value={formData.cellPhone} onChange={handleChange} required disabled={loading} className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-transparent transition disabled:bg-gray-50 disabled:cursor-not-allowed" placeholder="Cell Phone" />
+                  <input 
+                    type="tel" 
+                    name="cellPhone" 
+                    value={formData.cellPhone} 
+                    onChange={handleChange} 
+                    required 
+                    disabled={loading} 
+                    className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-transparent transition disabled:bg-gray-50 disabled:cursor-not-allowed" 
+                    placeholder="Cell Phone" 
+                  />
                 </div>
               </div>
 
               <div className="mt-6">
                 <label className="block text-gray-700 font-semibold mb-2">Inquiry</label>
-                <textarea name="inquiry" value={formData.inquiry} onChange={handleChange} rows="3" disabled={loading} className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-transparent transition disabled:bg-gray-50 disabled:cursor-not-allowed" placeholder="Tell us about your fitness goals or any special requests..." />
+                <textarea 
+                  name="inquiry" 
+                  value={formData.inquiry} 
+                  onChange={handleChange} 
+                  rows="3" 
+                  disabled={loading} 
+                  className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-transparent transition disabled:bg-gray-50 disabled:cursor-not-allowed" 
+                  placeholder="Tell us about your fitness goals or any special requests..." 
+                />
               </div>
 
               <div className="grid md:grid-cols-2 gap-6 mt-6">
@@ -202,18 +251,41 @@ const MemberRegistration = () => {
                   <label className="block text-gray-700 font-semibold mb-2">Gender</label>
                   <div className="flex gap-4">
                     <label className="inline-flex items-center">
-                      <input type="radio" name="gender" value="male" checked={formData.gender === 'male'} onChange={handleChange} disabled={loading} className="text-orange-500 focus:ring-orange-500 disabled:cursor-not-allowed" />
+                      <input 
+                        type="radio" 
+                        name="gender" 
+                        value="male" 
+                        checked={formData.gender === 'male'} 
+                        onChange={handleChange} 
+                        disabled={loading} 
+                        className="text-orange-500 focus:ring-orange-500 disabled:cursor-not-allowed" 
+                      />
                       <span className="ml-2">Male</span>
                     </label>
                     <label className="inline-flex items-center">
-                      <input type="radio" name="gender" value="female" checked={formData.gender === 'female'} onChange={handleChange} disabled={loading} className="text-orange-500 focus:ring-orange-500 disabled:cursor-not-allowed" />
+                      <input 
+                        type="radio" 
+                        name="gender" 
+                        value="female" 
+                        checked={formData.gender === 'female'} 
+                        onChange={handleChange} 
+                        disabled={loading} 
+                        className="text-orange-500 focus:ring-orange-500 disabled:cursor-not-allowed" 
+                      />
                       <span className="ml-2">Female</span>
                     </label>
                   </div>
                 </div>
                 <div>
                   <label className="block text-gray-700 font-semibold mb-2">Date of Birth</label>
-                  <input type="date" name="dateOfBirth" value={formData.dateOfBirth} onChange={handleChange} disabled={loading} className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-transparent transition disabled:bg-gray-50 disabled:cursor-not-allowed" />
+                  <input 
+                    type="date" 
+                    name="dateOfBirth" 
+                    value={formData.dateOfBirth} 
+                    onChange={handleChange} 
+                    disabled={loading} 
+                    className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-transparent transition disabled:bg-gray-50 disabled:cursor-not-allowed" 
+                  />
                 </div>
               </div>
             </div>
@@ -224,21 +296,53 @@ const MemberRegistration = () => {
               <div className="grid md:grid-cols-2 gap-6">
                 <div>
                   <label className="block text-gray-700 font-semibold mb-2">Name</label>
-                  <input type="text" name="emergency.name" value={formData.emergencyContact.name} onChange={handleChange} disabled={loading} className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-transparent transition disabled:bg-gray-50 disabled:cursor-not-allowed" placeholder="Name" />
+                  <input 
+                    type="text" 
+                    name="emergency.name" 
+                    value={formData.emergencyContact.name} 
+                    onChange={handleChange} 
+                    disabled={loading} 
+                    className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-transparent transition disabled:bg-gray-50 disabled:cursor-not-allowed" 
+                    placeholder="Name" 
+                  />
                 </div>
                 <div>
                   <label className="block text-gray-700 font-semibold mb-2">Cell Phone</label>
-                  <input type="tel" name="emergency.phone" value={formData.emergencyContact.phone} onChange={handleChange} disabled={loading} className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-transparent transition disabled:bg-gray-50 disabled:cursor-not-allowed" placeholder="Cell Phone" />
+                  <input 
+                    type="tel" 
+                    name="emergency.phone" 
+                    value={formData.emergencyContact.phone} 
+                    onChange={handleChange} 
+                    disabled={loading} 
+                    className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-transparent transition disabled:bg-gray-50 disabled:cursor-not-allowed" 
+                    placeholder="Cell Phone" 
+                  />
                 </div>
               </div>
               <div className="grid md:grid-cols-2 gap-6 mt-6">
                 <div>
                   <label className="block text-gray-700 font-semibold mb-2">Email</label>
-                  <input type="email" name="emergency.email" value={formData.emergencyContact.email} onChange={handleChange} disabled={loading} className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-transparent transition disabled:bg-gray-50 disabled:cursor-not-allowed" placeholder="Email" />
+                  <input 
+                    type="email" 
+                    name="emergency.email" 
+                    value={formData.emergencyContact.email} 
+                    onChange={handleChange} 
+                    disabled={loading} 
+                    className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-transparent transition disabled:bg-gray-50 disabled:cursor-not-allowed" 
+                    placeholder="Email" 
+                  />
                 </div>
                 <div>
                   <label className="block text-gray-700 font-semibold mb-2">Relationship</label>
-                  <input type="text" name="emergency.relationship" value={formData.emergencyContact.relationship} onChange={handleChange} disabled={loading} className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-transparent transition disabled:bg-gray-50 disabled:cursor-not-allowed" placeholder="Relationship" />
+                  <input 
+                    type="text" 
+                    name="emergency.relationship" 
+                    value={formData.emergencyContact.relationship} 
+                    onChange={handleChange} 
+                    disabled={loading} 
+                    className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-transparent transition disabled:bg-gray-50 disabled:cursor-not-allowed" 
+                    placeholder="Relationship" 
+                  />
                 </div>
               </div>
             </div>
@@ -248,9 +352,18 @@ const MemberRegistration = () => {
               <h2 className="text-2xl font-bold text-orange-500 mb-6 pb-2 border-b border-gray-200">Additional Information</h2>
               <div>
                 <label className="block text-gray-700 font-semibold mb-2">How did you hear about us? *</label>
-                <select name="hearAboutUs" value={formData.hearAboutUs} onChange={handleChange} required disabled={loading} className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-transparent transition bg-white disabled:bg-gray-50 disabled:cursor-not-allowed">
+                <select 
+                  name="hearAboutUs" 
+                  value={formData.hearAboutUs} 
+                  onChange={handleChange} 
+                  required 
+                  disabled={loading} 
+                  className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-transparent transition bg-white disabled:bg-gray-50 disabled:cursor-not-allowed"
+                >
                   {hearAboutOptions.map((option, index) => (
-                    <option key={index} value={option}>{option}</option>
+                    <option key={index} value={option === 'Please select an option' ? '' : option}>
+                      {option}
+                    </option>
                   ))}
                 </select>
               </div>
@@ -292,15 +405,15 @@ const MemberRegistration = () => {
                 <h3 className="text-xl font-bold text-orange-500 mb-4">What Happens Next?</h3>
                 <ul className="space-y-3">
                   <li className="flex items-start gap-3">
-                    <div className="w-6 h-6 flex items-center justify-center rounded-full bg-orange-500 text-white text-sm">1</div>
+                    <div className="w-6 h-6 flex items-center justify-center rounded-full bg-orange-500 text-white text-sm flex-shrink-0">1</div>
                     <span>We&apos;ll review your application within 24 hours</span>
                   </li>
                   <li className="flex items-start gap-3">
-                    <div className="w-6 h-6 flex items-center justify-center rounded-full bg-orange-500 text-white text-sm">2</div>
+                    <div className="w-6 h-6 flex items-center justify-center rounded-full bg-orange-500 text-white text-sm flex-shrink-0">2</div>
                     <span>Our team will contact you to schedule an orientation</span>
                   </li>
                   <li className="flex items-start gap-3">
-                    <div className="w-6 h-6 flex items-center justify-center rounded-full bg-orange-500 text-white text-sm">3</div>
+                    <div className="w-6 h-6 flex items-center justify-center rounded-full bg-orange-500 text-white text-sm flex-shrink-0">3</div>
                     <span>Complete payment and get your membership card</span>
                   </li>
                 </ul>
@@ -309,9 +422,9 @@ const MemberRegistration = () => {
                 <h3 className="text-xl font-bold text-orange-500 mb-4">Need Help?</h3>
                 <p className="text-gray-600 mb-4">Our support team is ready to assist you with the registration process.</p>
                 <div className="space-y-2">
-                  <p className="font-semibold flex items-center gap-2"><FaPhoneAlt className="text-orange-500" /> (555) 123-4567</p>
-                  <p className="font-semibold flex items-center gap-2"><FaEnvelope className="text-orange-500" /> support@powergym.com</p>
-                  <p className="font-semibold flex items-center gap-2"><FaMapMarkerAlt className="text-orange-500" /> Visit us at 123 Fitness St, Health City</p>
+                  <p className="font-semibold flex items-center gap-2"><FaPhoneAlt className="text-orange-500 flex-shrink-0" /> (555) 123-4567</p>
+                  <p className="font-semibold flex items-center gap-2"><FaEnvelope className="text-orange-500 flex-shrink-0" /> support@powergym.com</p>
+                  <p className="font-semibold flex items-center gap-2"><FaMapMarkerAlt className="text-orange-500 flex-shrink-0" /> Visit us at 123 Fitness St, Health City</p>
                 </div>
               </div>
             </div>

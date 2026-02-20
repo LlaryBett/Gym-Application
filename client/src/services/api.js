@@ -1,5 +1,5 @@
 // api.js - Frontend API Helper for Session-based Authentication
-const API_BASE_URL = import.meta.env.VITE_API_URL || 'https://gym-application-kq9p.onrender.com/api';
+const API_BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:5000/api';
 
 // Helper for making requests with credentials (for sessions)
 const request = async (endpoint, options = {}) => {

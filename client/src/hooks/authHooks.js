@@ -14,3 +14,16 @@ export const useRequireAuth = () => {
 
   return auth;
 };
+
+// ✅ NEW: Hook for protected pages with navigation
+export const useProtectedRoute = (navigate) => {
+  const auth = useAuth();
+  
+  useEffect(() => {
+    if (!auth.loading && !auth.isAuthenticated) {
+      navigate('/login', { state: { from: window.location.pathname } });
+    }
+  }, [auth.loading, auth.isAuthenticated, navigate]);
+
+  return auth;
+};

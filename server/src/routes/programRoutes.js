@@ -48,7 +48,6 @@ const router = express.Router();
 
 // ==================== PUBLIC ROUTES ====================
 // These routes do NOT require authentication
-// 🔴 SPECIFIC ROUTES MUST COME BEFORE DYNAMIC /:id ROUTE
 
 /**
  * @route   GET /api/programs
@@ -99,55 +98,54 @@ router.get('/category/:category', getProgramsByCategory);
  */
 router.get('/stats', getProgramStats);
 
-/**
- * @route   GET /api/programs/:id
- * @desc    Get a single program by ID
- * @access  Public
- */
-router.get('/:id', getProgramById);
-
 // ==================== PROTECTED ROUTES (Require Authentication) ====================
-// All routes after this middleware require authentication
-router.use(authMiddleware);
-
-/**
- * @route   POST /api/programs/enroll
- * @desc    Enroll in a program
- * @access  Private (Any authenticated user)
- */
-router.post('/enroll', enrollInProgram);
+// 🔴 THESE SPECIFIC ROUTES MUST COME BEFORE THE DYNAMIC /:id ROUTE
 
 /**
  * @route   GET /api/programs/my-enrollments
  * @desc    Get current user's program enrollments
  * @access  Private
  */
-router.get('/my-enrollments', getMyEnrollments);
+router.get('/my-enrollments', authMiddleware, getMyEnrollments);
 
 /**
  * @route   GET /api/programs/my/saved
  * @desc    Get current user's saved programs (wishlist)
  * @access  Private
  */
-router.get('/my/saved', getMySavedPrograms);
+router.get('/my/saved', authMiddleware, getMySavedPrograms);
+
+/**
+ * @route   GET /api/programs/:id
+ * @desc    Get a single program by ID
+ * @access  Public
+ * 🔴 THIS DYNAMIC ROUTE MUST COME AFTER ALL SPECIFIC ROUTES
+ */
+router.get('/:id', getProgramById);
+
+/**
+ * @route   POST /api/programs/enroll
+ * @desc    Enroll in a program
+ * @access  Private (Any authenticated user)
+ */
+router.post('/enroll', authMiddleware, enrollInProgram);
 
 /**
  * @route   POST /api/programs/:id/save
  * @desc    Save a program to user's wishlist
  * @access  Private
  */
-router.post('/:id/save', saveProgram);
+router.post('/:id/save', authMiddleware, saveProgram);
 
 /**
  * @route   DELETE /api/programs/:id/save
  * @desc    Remove a program from user's wishlist
  * @access  Private
  */
-router.delete('/:id/save', unsaveProgram);
+router.delete('/:id/save', authMiddleware, unsaveProgram);
 
 // ==================== ADMIN ONLY ROUTES ====================
 // All routes after this require admin privileges
-// Note: authMiddleware is already applied above, so we only need adminMiddleware
 
 // ===== Program Management =====
 /**
