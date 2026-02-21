@@ -5,6 +5,8 @@ import Benefits from '../components/Benefits'
 import Recovery from '../components/Recovery'
 import TestimonialCard from '../components/TestimonialCard'
 import { FeaturedServices } from '../components/FeaturedServices'
+import { Link } from 'react-router-dom' // ✅ Add this import
+
 export default function Home() {
   const scrollToSection = (sectionId) => {
     const element = document.getElementById(sectionId)
@@ -88,14 +90,16 @@ export default function Home() {
               </p>
 
               <div className="flex flex-row gap-2 sm:gap-3">
-                <Button 
-                  variant="accent" 
-                  size="sm"
-                  className="text-sm sm:text-base px-4 sm:px-6"
-                  onClick={() => scrollToSection('membership')}
-                >
-                  Start Free Trial
-                </Button>
+                {/* ✅ FIXED: Start Free Trial button with correct link */}
+                <Link to="/register?plan=trial">
+                  <Button 
+                    variant="accent" 
+                    size="sm"
+                    className="text-sm sm:text-base px-4 sm:px-6"
+                  >
+                    Start Free Trial
+                  </Button>
+                </Link>
 
                 <button 
                   className="flex items-center justify-center gap-1 sm:gap-2 px-3 sm:px-6 py-2 sm:py-3 text-black-700 hover:text-orange-500 font-semibold transition-colors text-sm sm:text-base"

@@ -176,7 +176,7 @@ export const membershipService = {
   
   /**
    * Get current user's active membership
-   * @returns {Promise} - Formatted active membership
+   * @returns {Promise} - Formatted active membership with trial info
    */
   getMyMembership: async () => {
     try {
@@ -429,9 +429,9 @@ export const membershipService = {
   },
   
   /**
-   * Format membership for display
+   * Format membership for display with trial support
    * @param {Object} membership - Raw membership data
-   * @returns {Object} - Formatted membership
+   * @returns {Object} - Formatted membership with trial info
    */
   formatMembershipForDisplay: (membership) => {
     if (!membership) return null;
@@ -441,6 +441,13 @@ export const membershipService = {
     const today = new Date();
     
     const daysRemaining = Math.ceil((endDate - today) / (1000 * 60 * 60 * 24));
+    
+    // ✅ Check if this is a trial membership
+    const isTrial = membership.plan_name === '7-Day Free Trial' || 
+                    membership.billing_cycle === 'trial' ||
+                    membership.isTrial === true;
+    
+    const isExpired = endDate < today;
     
     return {
       id: membership.id,
@@ -454,10 +461,16 @@ export const membershipService = {
       status: membership.status,
       auto_renew: membership.auto_renew || false,
       days_remaining: daysRemaining > 0 ? daysRemaining : 0,
-      is_expired: endDate < today,
-      is_active: membership.status === 'active' && endDate >= today,
+      is_expired: isExpired,
+      is_active: membership.status === 'active' && !isExpired,
       formatted_start: membershipService.formatDate(membership.start_date),
-      formatted_end: membershipService.formatDate(membership.end_date)
+      formatted_end: membershipService.formatDate(membership.end_date),
+      
+      // ✅ NEW: Trial-specific fields
+      isTrial,
+      trial_ends: isTrial ? membership.end_date : null,
+      trial_expired: isTrial ? isExpired : false,
+      requires_upgrade: isTrial ? isExpired : false
     };
   },
   
@@ -483,11 +496,11 @@ export const membershipService = {
    * @returns {string} - Formatted price string
    */
   getPriceDisplay: (plan, cycle = 'monthly') => {
-    if (!plan) return '$0';
+    if (!plan) return 'KSH 0';
     const price = cycle === 'monthly' 
       ? plan.price?.monthly || plan.price_monthly 
       : plan.price?.yearly || plan.price_yearly;
-    return `$${price}/${cycle === 'monthly' ? 'mo' : 'yr'}`;
+    return `KSH ${price}/${cycle === 'monthly' ? 'mo' : 'yr'}`;
   },
   
   /**
@@ -526,7 +539,7 @@ export const membershipService = {
     return {
       amount: savings,
       percentage,
-      display: `Save $${savings}/year (${percentage}%)`
+      display: `Save KSH ${savings}/year (${percentage}%)`
     };
   },
   

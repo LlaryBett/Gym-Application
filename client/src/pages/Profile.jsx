@@ -476,14 +476,17 @@ const Profile = () => {
         )}
 
         
-       {/* ===== MEMBERSHIP CARD ===== */}
+      
+{/* ===== MEMBERSHIP CARD ===== */}
 {membership && (
   <div className="bg-gradient-to-br from-orange-500 to-orange-600 rounded-xl shadow-lg p-6 md:p-8 mb-8 text-white">
     {/* Desktop - Stats Row at TOP RIGHT (Hidden on mobile) */}
     <div className="hidden md:flex items-start gap-8 w-full justify-end">
       {/* Price */}
       <div className="text-right">
-        <div className="text-2xl font-bold">Ksh{membership.price_paid}</div>
+        <div className="text-2xl font-bold">
+          {membership.isTrial ? 'Free' : `Ksh${membership.price_paid}`}
+        </div>
         <p className="text-orange-100 text-sm">{membership.billing_cycle}</p>
       </div>
 
@@ -491,39 +494,52 @@ const Profile = () => {
       <div className="text-right min-w-[90px]">
         <p className="text-orange-100 text-sm">Status</p>
         <p className="font-semibold flex items-center gap-1">
-          <FaCheckCircle className="text-green-300" /> {membership.status || 'Active'}
+          <FaCheckCircle className="text-green-300" /> 
+          {membership.trial_expired ? 'Expired' : (membership.status || 'Active')}
         </p>
       </div>
 
-      {/* Renewal */}
+      {/* Renewal/End Date */}
       <div className="text-right min-w-[100px]">
-        <p className="text-orange-100 text-sm">Renews</p>
+        <p className="text-orange-100 text-sm">
+          {membership.isTrial ? 'Trial Ends' : 'Renews'}
+        </p>
         <p className="font-semibold text-sm">{formatDate(membership.end_date)}</p>
       </div>
 
-      {/* Auto-Renew */}
-      <div className="text-right min-w-[80px]">
-        <p className="text-orange-100 text-sm">Auto</p>
-        <p className="font-semibold">{membership.auto_renew ? 'ON' : 'OFF'}</p>
-      </div>
+      {/* Auto-Renew (hide for trial) */}
+      {!membership.isTrial && (
+        <div className="text-right min-w-[80px]">
+          <p className="text-orange-100 text-sm">Auto</p>
+          <p className="font-semibold">{membership.auto_renew ? 'ON' : 'OFF'}</p>
+        </div>
+      )}
 
       {/* Days Left Badge */}
       {membership.days_remaining > 0 && (
         <div className="bg-white/20 px-3 py-1 rounded-full text-sm font-semibold whitespace-nowrap">
-          {membership.days_remaining} days left
+          {membership.isTrial ? `${membership.days_remaining} trial days left` : `${membership.days_remaining} days left`}
         </div>
       )}
     </div>
 
     {/* Desktop Layout - Plan Header on Left */}
-    <div className="flex flex-col md:flex-row gap-6 items-start justify-between">
+    <div className="flex flex-col md:flex-row gap-6 items-start justify-between mt-4 md:mt-0">
       {/* Left - Icon & Plan */}
       <div className="flex items-center gap-4">
         <div className="bg-white/20 p-4 rounded-full flex-shrink-0">
           <FaCrown size={24} />
         </div>
         <div>
-          <h3 className="text-xl font-bold">{membership.plan_name} Membership</h3>
+          <div className="flex items-center gap-3">
+            <h3 className="text-xl font-bold">{membership.plan_name}</h3>
+            {/* ✅ TRIAL BADGE */}
+            {membership.isTrial && (
+              <span className="bg-yellow-400 text-orange-800 text-xs font-bold px-2 py-1 rounded-full">
+                {membership.trial_expired ? 'EXPIRED' : 'TRIAL'}
+              </span>
+            )}
+          </div>
           <p className="text-orange-100 mt-1 text-sm">Member #{membership.membership_number}</p>
         </div>
       </div>
@@ -531,13 +547,16 @@ const Profile = () => {
       {/* Mobile - Price & Status (Mobile only) */}
       <div className="flex md:hidden justify-between w-full mt-2">
         <div>
-          <div className="text-2xl font-bold">Ksh{membership.price_paid}</div>
+          <div className="text-2xl font-bold">
+            {membership.isTrial ? 'Free' : `Ksh${membership.price_paid}`}
+          </div>
           <p className="text-orange-100 text-xs">{membership.billing_cycle}</p>
         </div>
         <div className="text-right">
           <p className="text-orange-100 text-xs">Status</p>
           <p className="font-semibold flex items-center gap-1">
-            <FaCheckCircle className="text-green-300" size={14} /> {membership.status || 'Active'}
+            <FaCheckCircle className="text-green-300" size={14} /> 
+            {membership.trial_expired ? 'Expired' : (membership.status || 'Active')}
           </p>
         </div>
       </div>
@@ -546,13 +565,17 @@ const Profile = () => {
     {/* Mobile - Additional Info Row (Mobile only) */}
     <div className="flex md:hidden justify-between mt-4 pt-4 border-t border-orange-400">
       <div>
-        <p className="text-orange-100 text-xs">Renews</p>
+        <p className="text-orange-100 text-xs">
+          {membership.isTrial ? 'Trial Ends' : 'Renews'}
+        </p>
         <p className="font-semibold text-sm">{formatDate(membership.end_date)}</p>
       </div>
-      <div>
-        <p className="text-orange-100 text-xs">Auto-Renew</p>
-        <p className="font-semibold">{membership.auto_renew ? 'ON' : 'OFF'}</p>
-      </div>
+      {!membership.isTrial && (
+        <div>
+          <p className="text-orange-100 text-xs">Auto-Renew</p>
+          <p className="font-semibold">{membership.auto_renew ? 'ON' : 'OFF'}</p>
+        </div>
+      )}
       {membership.days_remaining > 0 && (
         <div className="bg-white/20 px-3 py-1 rounded-full text-xs font-semibold">
           {membership.days_remaining}d left
@@ -560,20 +583,41 @@ const Profile = () => {
       )}
     </div>
 
-    {/* Buttons - Same for both */}
+    {/* Buttons - Show Upgrade for trial users, regular buttons for paid members */}
     <div className="mt-6 flex gap-3 justify-center md:justify-center">
-      <Link
-        to="/membership"
-        className="bg-gray-900 text-white px-4 py-2 rounded-full font-semibold hover:bg-black transition text-sm md:text-base"
-      >
-        Upgrade Plan
-      </Link>
-      <button
-        onClick={handleCancelMembership}
-        className="bg-gray-700 text-white px-4 py-2 rounded-full font-semibold hover:bg-gray-800 transition text-sm md:text-base"
-      >
-        Cancel
-      </button>
+      {membership.isTrial ? (
+        <>
+          <Link
+            to="/membership"
+            className="bg-white text-orange-600 px-4 py-2 rounded-full font-semibold hover:bg-gray-100 transition text-sm md:text-base"
+          >
+            {membership.trial_expired ? 'Upgrade Now' : 'Upgrade Plan'}
+          </Link>
+          {!membership.trial_expired && (
+            <button
+              onClick={handleCancelMembership}
+              className="bg-gray-700 text-white px-4 py-2 rounded-full font-semibold hover:bg-gray-800 transition text-sm md:text-base"
+            >
+              Cancel Trial
+            </button>
+          )}
+        </>
+      ) : (
+        <>
+          <Link
+            to="/membership"
+            className="bg-gray-900 text-white px-4 py-2 rounded-full font-semibold hover:bg-black transition text-sm md:text-base"
+          >
+            Upgrade Plan
+          </Link>
+          <button
+            onClick={handleCancelMembership}
+            className="bg-gray-700 text-white px-4 py-2 rounded-full font-semibold hover:bg-gray-800 transition text-sm md:text-base"
+          >
+            Cancel
+          </button>
+        </>
+      )}
     </div>
   </div>
 )}

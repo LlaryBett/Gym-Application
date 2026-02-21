@@ -150,6 +150,17 @@ export const getMyMembership = async (req, res) => {
             });
         }
 
+        // Calculate days remaining
+        const today = new Date();
+        const endDate = new Date(membership.end_date);
+        const daysRemaining = Math.ceil((endDate - today) / (1000 * 60 * 60 * 24));
+        
+        // Check if this is a trial membership
+        const isTrial = membership.plan_name === '7-Day Free Trial' || membership.billing_cycle === 'trial';
+        
+        // Check if trial is expired
+        const isExpired = isTrial ? today > endDate : false;
+
         res.json({
             success: true,
             data: {
@@ -161,12 +172,16 @@ export const getMyMembership = async (req, res) => {
                 price_paid: parseFloat(membership.price_paid),
                 start_date: membership.start_date,
                 end_date: membership.end_date,
-                status: membership.status,
+                status: isExpired ? 'expired' : membership.status, // Show expired if trial ended
                 auto_renew: membership.auto_renew,
                 features: membership.features,
-                days_remaining: Math.ceil(
-                    (new Date(membership.end_date) - new Date()) / (1000 * 60 * 60 * 24)
-                )
+                days_remaining: daysRemaining > 0 ? daysRemaining : 0,
+                
+                // ✅ NEW TRIAL-SPECIFIC FIELDS
+                isTrial,
+                trial_ends: isTrial ? membership.end_date : null,
+                trial_expired: isExpired,
+                requires_upgrade: isExpired // Helper for frontend
             }
         });
 

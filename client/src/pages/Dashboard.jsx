@@ -1,16 +1,17 @@
 import React, { useState, useEffect } from 'react';
-import { useLocation, useNavigate } from 'react-router-dom';
+import { useLocation, useNavigate, Link } from 'react-router-dom';
 import toast from 'react-hot-toast';
 import { useAuth } from '../hooks/authHooks';
 import { bookingService } from '../services/bookingService';
+import { membershipService } from '../services/membershipService'; // ✅ ADDED
 import CTA from '../components/CTA';
 
 export default function Dashboard() {
   const { user } = useAuth();
   const navigate = useNavigate();
   const location = useLocation();
-  const [allBookings, setAllBookings] = useState([]); // ALL bookings for stats
-  const [displayBookings, setDisplayBookings] = useState([]); // Filtered bookings for display
+  const [allBookings, setAllBookings] = useState([]);
+  const [displayBookings, setDisplayBookings] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const [activeTab, setActiveTab] = useState('upcoming');
@@ -29,8 +30,11 @@ export default function Dashboard() {
     review: '',
     would_recommend: true
   });
-  const [availableTimeSlots, setAvailableTimeSlots] = useState([]); // ✅ ADDED
+  const [availableTimeSlots, setAvailableTimeSlots] = useState([]);
   
+  // ✅ TRIAL STATE
+  const [membership, setMembership] = useState(null);
+
   // Success message from booking page
   const successMessage = location.state?.message;
 
@@ -43,6 +47,7 @@ export default function Dashboard() {
     }
 
     fetchAllBookings();
+    fetchMembership(); // ✅ Fetch membership for trial info
   }, [user]);
 
   useEffect(() => {
@@ -51,12 +56,23 @@ export default function Dashboard() {
     }
   }, [activeTab, allBookings]);
 
-  // ✅ ADDED - Check availability when reschedule date changes
   useEffect(() => {
     if (selectedBooking && rescheduleData.new_date) {
       checkAvailabilityForReschedule();
     }
   }, [rescheduleData.new_date, selectedBooking]);
+
+  // ✅ FETCH MEMBERSHIP FOR TRIAL INFO
+  const fetchMembership = async () => {
+    try {
+      const response = await membershipService.getMyMembership();
+      if (response.success && response.data) {
+        setMembership(response.data);
+      }
+    } catch (err) {
+      console.error('Failed to fetch membership:', err);
+    }
+  };
 
   const fetchAllBookings = async () => {
     try {
@@ -114,7 +130,6 @@ export default function Dashboard() {
     setDisplayBookings(filtered);
   };
 
-  // ✅ ADDED - Check availability for reschedule
   const checkAvailabilityForReschedule = async () => {
     if (!selectedBooking?.trainer_id || !rescheduleData.new_date) return;
     
@@ -176,7 +191,7 @@ export default function Dashboard() {
         setShowRescheduleModal(false);
         setSelectedBooking(null);
         setRescheduleData({ new_date: '', new_time: '' });
-        setAvailableTimeSlots([]); // ✅ Clear slots
+        setAvailableTimeSlots([]);
         fetchAllBookings();
         toast.success('Booking rescheduled successfully');
       }
@@ -329,9 +344,9 @@ export default function Dashboard() {
   // ==================== RENDER BOOKING CARD ====================
   const renderBookingCard = (booking) => {
    
-    const canCancel = bookingService.canCancel(booking); // ✅ FIXED - use service method
-    const canReschedule = bookingService.canReschedule(booking); // ✅ FIXED - use service method
-    const canProvideFeedback = bookingService.canProvideFeedback(booking); // ✅ FIXED - use service method
+    const canCancel = bookingService.canCancel(booking);
+    const canReschedule = bookingService.canReschedule(booking);
+    const canProvideFeedback = bookingService.canProvideFeedback(booking);
 
     return (
       <div key={booking.id} className="bg-white rounded-xl shadow-md hover:shadow-lg transition-shadow overflow-hidden border border-gray-100">
@@ -734,6 +749,53 @@ export default function Dashboard() {
     </div>
   );
 
+  // ✅ RENDER TRIAL BANNER
+  const renderTrialBanner = () => {
+    if (!membership?.isTrial) return null;
+    
+    if (membership.trial_expired) {
+      return (
+        <div className="max-w-6xl mx-auto mb-8 bg-red-50 border-l-4 border-red-500 rounded-lg p-4">
+          <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
+            <div className="flex items-center gap-3">
+              <span className="text-3xl">⏰</span>
+              <div>
+                <p className="font-bold text-red-800 text-lg">Your free trial has ended</p>
+                <p className="text-red-600 text-sm">Upgrade to continue accessing all features</p>
+              </div>
+            </div>
+            <Link 
+              to="/membership" 
+              className="bg-red-500 text-white px-6 py-2 rounded-lg font-semibold hover:bg-red-600 transition text-center"
+            >
+              Upgrade Now
+            </Link>
+          </div>
+        </div>
+      );
+    }
+    
+    return (
+      <div className="max-w-6xl mx-auto mb-8 bg-gradient-to-r from-orange-500 to-orange-600 rounded-xl shadow-lg p-4 text-white">
+        <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
+          <div className="flex items-center gap-3">
+            <span className="text-3xl">🔔</span>
+            <div>
+              <p className="font-bold text-lg">Your free trial ends in {membership.days_remaining} days</p>
+              <p className="text-orange-100 text-sm">Upgrade anytime to continue after your trial</p>
+            </div>
+          </div>
+          <Link 
+            to="/membership" 
+            className="bg-white text-orange-600 px-6 py-2 rounded-lg font-semibold hover:bg-gray-100 transition text-center"
+          >
+            Upgrade Now
+          </Link>
+        </div>
+      </div>
+    );
+  };
+
   return (
     <div className="py-8 md:py-16">
       <div className="container mx-auto px-4 md:px-16">
@@ -749,6 +811,9 @@ export default function Dashboard() {
             </div>
           </div>
         )}
+
+        {/* ✅ TRIAL BANNER */}
+        {renderTrialBanner()}
 
         {/* Header */}
         <div className="max-w-6xl mx-auto mb-8 md:mb-12">

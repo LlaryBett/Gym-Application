@@ -3,7 +3,7 @@
 export const emailTemplates = {
   // Welcome email for new members
   welcome: (member) => ({
-    subject: `🎉 Welcome to ${process.env.COMPANY_NAME || 'PowerGym'} Family, ${member.first_name}!`,
+    subject: `Welcome to ${process.env.COMPANY_NAME || 'PowerGym'} Family, ${member.first_name}!`,
     htmlContent: `
       <div style="font-family: system-ui, sans-serif, Arial; font-size: 16px; background-color: #fff8f1">
         <div style="max-width: 600px; margin: auto; padding: 16px">
@@ -71,7 +71,7 @@ export const emailTemplates = {
 
   // Admin notification for new registration
   adminNotification: (member) => ({
-    subject: '🆕 New Member Registration - Action Required',
+    subject: 'New Member Registration - Action Required',
     htmlContent: `
       <div style="font-family: system-ui, sans-serif, Arial; font-size: 16px; background-color: #fff8f1">
         <div style="max-width: 600px; margin: auto; padding: 16px">
@@ -125,5 +125,155 @@ export const emailTemplates = {
         </div>
       </div>
     `
-  })
+  }),
+
+  // Add to emailTemplates object
+trialWelcome: (member, trialInfo) => ({
+  subject: `🎉 Your 7-Day Free Trial at ${process.env.COMPANY_NAME || 'PowerGym'} Starts Now!`,
+
+  htmlContent: `
+    <div style="font-family: system-ui, sans-serif, Arial; font-size: 16px; background-color: #fff8f1">
+      <div style="max-width: 600px; margin: auto; padding: 16px">
+
+        <!-- Header with Logo and PowerGym Text -->
+        <a style="text-decoration: none; outline: none; display: flex; align-items: center; gap: 8px; margin-bottom: 20px;"
+           href="${process.env.WEBSITE_URL || 'http://localhost:3000'}"
+           target="_blank">
+
+          <img
+            style="height: 40px; width: 40px; border-radius: 50%; object-fit: cover; vertical-align: middle"
+            height="40px"
+            width="40px"
+            src="${process.env.LOGO_URL || 'cid:logo.png'}"
+            alt="${process.env.COMPANY_NAME || 'PowerGym'}"
+          />
+
+          <span style="font-size: 20px; font-weight: bold; color: #262626;">
+            Power<span style="color: #f97316;">Gym</span>
+          </span>
+        </a>
+
+        <!-- Separator Line -->
+        <hr style="border: none; border-top: 1px solid #eaeaea; margin: 20px 0;" />
+
+        <p>Hello ${member.first_name},</p>
+
+        <p>
+          Your 7-day free trial has officially started. Here are the details:
+        </p>
+
+        <p style="margin: 12px 0;">
+          <strong>Trial Ends:</strong> 
+          ${new Date(trialInfo.trialEnds).toLocaleDateString()}
+        </p>
+
+        <p>
+          You now have full access to explore features, book classes, and track your progress.
+        </p>
+
+        <p style="margin: 24px 0;">
+          <a
+            href="${process.env.WEBSITE_URL || 'http://localhost:3000'}/dashboard"
+            style="
+              display: inline-block;
+              text-decoration: none;
+              outline: none;
+              color: #fff;
+              background-color: #f97316;
+              padding: 10px 20px;
+              border-radius: 4px;
+            "
+            target="_blank"
+          >
+            Go to Dashboard
+          </a>
+        </p>
+
+        <p>
+          Enjoy your training <br />
+          The ${process.env.COMPANY_NAME || 'PowerGym'} Team
+        </p>
+
+      </div>
+    </div>
+  `
+}),
+// Update adminNotification to show trial flag
+adminNotification: (member, options = {}) => ({
+    subject: options.isTrial ? '🆕 New Trial Registration' : '🆕 New Member Registration',
+    // ... rest of template with trial indicator
+}),
+
+ 
+ // Forgot Membership email
+forgotMembership: (member) => ({
+  subject: `Your ${process.env.COMPANY_NAME || 'PowerGym'} Membership Number`,
+
+  htmlContent: `
+    <div style="font-family: system-ui, sans-serif, Arial; font-size: 16px; background-color: #fff8f1">
+      <div style="max-width: 600px; margin: auto; padding: 16px">
+
+        <!-- Header with Logo and PowerGym Text -->
+        <a style="text-decoration: none; outline: none; display: flex; align-items: center; gap: 8px; margin-bottom: 20px;"
+           href="${process.env.WEBSITE_URL || 'http://localhost:3000'}"
+           target="_blank">
+
+          <img
+            style="height: 40px; width: 40px; border-radius: 50%; object-fit: cover; vertical-align: middle"
+            height="40px"
+            width="40px"
+            src="${process.env.LOGO_URL || 'cid:logo.png'}"
+            alt="${process.env.COMPANY_NAME || 'PowerGym'}"
+          />
+
+          <span style="font-size: 20px; font-weight: bold; color: #262626;">
+            Power<span style="color: #f97316;">Gym</span>
+          </span>
+        </a>
+
+        <!-- Separator Line -->
+        <hr style="border: none; border-top: 1px solid #eaeaea; margin: 20px 0;" />
+
+        <p>Hello ${member.first_name},</p>
+
+        <p>
+          You requested to retrieve your membership number. Please find it below:
+        </p>
+
+        <p style="font-size: 24px; font-weight: bold; color: #f97316;">
+          ${member.membership_number}
+        </p>
+
+        <p>
+          This membership number is linked to ${member.email}.
+        </p>
+
+        <p>
+          If you didn't make this request, you can safely ignore this email.
+          ${process.env.COMPANY_NAME || 'PowerGym'} will never ask for your login details.
+        </p>
+
+        <p>
+          Best regards,<br />
+          The ${process.env.COMPANY_NAME || 'PowerGym'} Team
+        </p>
+
+      </div>
+    </div>
+  `,
+
+  textContent: `
+Hello ${member.first_name},
+
+You requested to retrieve your membership number.
+
+Membership Number:
+${member.membership_number}
+
+If you didn't make this request, you can safely ignore this email.
+
+Best regards,
+The ${process.env.COMPANY_NAME || 'PowerGym'} Team
+  `
+}),
 };

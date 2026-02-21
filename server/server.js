@@ -69,6 +69,8 @@ app.use(express.urlencoded({ extended: true, limit: '10mb' }));
 const { globalErrorHandler, notFound } = await import('./src/middleware/errorHandler.js');
 const { apiLimiter, registrationLimiter, loginLimiter } = await import('./src/middleware/rateLimiter.js');
 const { authMiddleware, adminMiddleware } = await import('./src/middleware/auth.js');
+// ✅ Import trial middleware (make sure this file exists)
+const { checkTrialExpiry } = await import('./src/middleware/trialMiddleware.js');
 
 // Import routes
 import authRoutes from './src/routes/authRoutes.js';
@@ -84,20 +86,62 @@ app.use('/api/', apiLimiter);
 
 // ==================== PUBLIC ROUTES ====================
 // These routes have NO authentication middleware applied
-// Authentication is handled internally by the route files if needed
 
 app.use('/api/auth', authRoutes);
 app.use('/api/members/register', registrationLimiter);
-app.use('/api/programs', programRoutes);
-app.use('/api/trainers', trainerRoutes); // REMOVED authMiddleware - trainers.js handles its own auth
-app.use('/api/services', serviceRoutes); // Check if serviceRoutes has its own auth handling
-app.use('/api/memberships', membershipRoutes); // Check if membershipRoutes has its own auth handling
+app.use('/api/programs', programRoutes); // Public program routes
+app.use('/api/trainers', trainerRoutes);
+app.use('/api/services', serviceRoutes);
+app.use('/api/memberships', membershipRoutes); // Public plan viewing
 
-// ==================== PROTECTED ROUTES ====================
-// These routes require authentication for ALL endpoints
+// ==================== PROTECTED ROUTES WITH TRIAL CHECK ====================
+// These routes require authentication AND trial check for all endpoints
 
-app.use('/api/members', authMiddleware, memberRoutes);
-app.use('/api/bookings', authMiddleware, bookingRoutes);
+// Member routes (all protected)
+app.use('/api/members', authMiddleware, checkTrialExpiry, memberRoutes);
+
+// Booking routes (all protected)
+app.use('/api/bookings', authMiddleware, checkTrialExpiry, bookingRoutes);
+
+// Program routes that need protection (specific endpoints)
+// Note: Public GET routes are already above
+app.post('/api/programs/enroll', authMiddleware, checkTrialExpiry, (req, res, next) => {
+  // This will be handled by programRoutes
+  req.url = '/enroll';
+  programRoutes(req, res, next);
+});
+
+app.get('/api/programs/my-enrollments', authMiddleware, checkTrialExpiry, (req, res, next) => {
+  req.url = '/my-enrollments';
+  programRoutes(req, res, next);
+});
+
+app.get('/api/programs/my/saved', authMiddleware, checkTrialExpiry, (req, res, next) => {
+  req.url = '/my/saved';
+  programRoutes(req, res, next);
+});
+
+app.post('/api/programs/:id/save', authMiddleware, checkTrialExpiry, (req, res, next) => {
+  // Forward to programRoutes with original URL
+  programRoutes(req, res, next);
+});
+
+app.delete('/api/programs/:id/save', authMiddleware, checkTrialExpiry, (req, res, next) => {
+  programRoutes(req, res, next);
+});
+
+// ==================== MEMBERSHIP ROUTES (Auth but NO trial check) ====================
+// These need auth but allow expired trial users to upgrade
+
+app.post('/api/memberships/purchase', authMiddleware, (req, res, next) => {
+  req.url = '/purchase';
+  membershipRoutes(req, res, next);
+});
+
+app.get('/api/memberships/my-membership', authMiddleware, (req, res, next) => {
+  req.url = '/my-membership';
+  membershipRoutes(req, res, next);
+});
 
 // ==================== ADMIN ROUTES ====================
 // Uncomment if you have admin routes

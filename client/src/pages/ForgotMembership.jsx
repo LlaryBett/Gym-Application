@@ -44,7 +44,7 @@ const ForgotMembership = () => {
             <div className="w-20 h-20 bg-green-100 rounded-full flex items-center justify-center mx-auto mb-6">
               <FaEnvelope className="text-green-500 text-3xl" />
             </div>
-            <h2 className="text-2xl font-bold text-gray-800 mb-4">Check Your Email</h2>
+            <h2 className="text-2xl font-bold text-orange-500 mb-4">Check Your Email</h2>
             <p className="text-gray-600 mb-6">
               We've sent your membership number to <strong>{email}</strong>
             </p>

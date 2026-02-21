@@ -21,7 +21,7 @@ export default function Trainers() {
     {
       id: 2,
       question: "What are the session rates?",
-      answer: "Individual sessions start at $50/hour. Package deals available: 5 sessions for $225, 10 sessions for $450, or monthly unlimited for $800. Prices vary by trainer specialization."
+      answer: "Individual sessions start at KSH 5,000/hour. Package deals available: 5 sessions for KSH 22,500, 10 sessions for KSH 45,000, or monthly unlimited for KSH 80,000. Prices vary by trainer specialization."
     },
     {
       id: 3,

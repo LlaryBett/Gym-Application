@@ -1,5 +1,7 @@
 // controllers/authController.js
 import Member from '../models/Members.js';
+import MembershipPlan from '../models/MembershipPlan.js'; // ✅ ADD THIS
+import MemberMembership from '../models/MemberMembership.js'; // ✅ ADD THIS
 import { memberSchemas } from '../utils/validation.js';
 import brevoService from '../config/brevo.js';
 import { emailTemplates } from '../utils/emailTemplates.js';
@@ -7,6 +9,9 @@ import { emailTemplates } from '../utils/emailTemplates.js';
 // Register new member (public route)
 export const registerMember = async (req, res) => {
   try {
+    // Check if trial was selected (from query param or body)
+    const isTrial = req.query.plan === 'trial' || req.body.plan_type === 'trial';
+    
     // Validate request data using the Joi schema
     const { error, value } = memberSchemas.registration.validate(req.body, { 
       abortEarly: false,
@@ -36,14 +41,49 @@ export const registerMember = async (req, res) => {
     // Create new member with validated data
     const member = await Member.create(validatedData);
     
+    // ===== HANDLE TRIAL SIGNUP =====
+    let trialInfo = null;
+    
+    if (isTrial) {
+      // Get the trial plan from database
+      const trialPlan = await MembershipPlan.findByName('7-Day Free Trial');
+      
+      if (trialPlan) {
+        // Calculate trial dates
+        const trialStart = new Date();
+        const trialEnd = new Date();
+        trialEnd.setDate(trialEnd.getDate() + 7); // Add 7 days
+        
+        // Create trial membership
+        const trialMembership = await MemberMembership.createTrial({
+          member_id: member.id,
+          plan_id: trialPlan.id,
+          start_date: trialStart,
+          end_date: trialEnd,
+          status: 'active'
+        });
+        
+        trialInfo = {
+          isTrial: true,
+          trialEnds: trialEnd,
+          daysRemaining: 7,
+          membershipNumber: trialMembership.membership_number
+        };
+        
+        console.log(`🎉 Trial started for ${member.email}, ends on ${trialEnd.toDateString()}`);
+      }
+    }
+    
     // ===== SEND EMAILS IN BACKGROUND (don't await) =====
     
-    // 1. Send welcome email to new member
+    // 1. Send welcome email to new member (with trial info if applicable)
+    const welcomeTemplate = isTrial ? emailTemplates.trialWelcome : emailTemplates.welcome;
+    
     brevoService.sendEmail({
       to: member.email,
-      subject: emailTemplates.welcome(member).subject,
-      htmlContent: emailTemplates.welcome(member).htmlContent,
-      textContent: emailTemplates.welcome(member).textContent
+      subject: welcomeTemplate(member, trialInfo).subject,
+      htmlContent: welcomeTemplate(member, trialInfo).htmlContent,
+      textContent: welcomeTemplate(member, trialInfo).textContent
     }).catch(err => {
       console.error('❌ Welcome email failed for:', member.email, err.message);
     });
@@ -51,8 +91,8 @@ export const registerMember = async (req, res) => {
     // 2. Send notification to admin
     brevoService.sendEmail({
       to: process.env.ADMIN_EMAIL,
-      subject: emailTemplates.adminNotification(member).subject,
-      htmlContent: emailTemplates.adminNotification(member).htmlContent
+      subject: emailTemplates.adminNotification(member, { isTrial }).subject,
+      htmlContent: emailTemplates.adminNotification(member, { isTrial }).htmlContent
     }).catch(err => {
       console.error('❌ Admin notification failed:', err.message);
     });
@@ -65,19 +105,29 @@ export const registerMember = async (req, res) => {
       email: member.email,
       phone: member.cell_phone,
       status: member.status,
-      createdAt: member.created_at
+      createdAt: member.created_at,
+      ...(trialInfo && { trial: trialInfo }) // Add trial info if applicable
     };
+    
+    // Customize next steps for trial users
+    const nextSteps = isTrial ? [
+      'Your 7-day free trial has started!',
+      'Explore all gym features and classes',
+      'Your trial ends in 7 days',
+      'Upgrade anytime to continue after trial'
+    ] : [
+      'We will review your application within 24 hours',
+      'Our team will contact you to schedule an orientation',
+      'Complete payment to activate your membership'
+    ];
     
     res.status(201).json({
       success: true,
-      message: 'Member registered successfully',
+      message: isTrial ? 'Trial started successfully!' : 'Member registered successfully',
       data: {
         member: responseData,
-        nextSteps: [
-          'We will review your application within 24 hours',
-          'Our team will contact you to schedule an orientation',
-          'Complete payment to activate your membership'
-        ]
+        nextSteps,
+        ...(trialInfo && { trial: trialInfo })
       }
     });
   } catch (error) {
@@ -285,8 +335,6 @@ export const logout = async (req, res) => {
   }
 };
 
-// In controllers/authController.js - Add this new function
-
 // Forgot membership number - send membership number to user's email
 export const forgotMembershipNumber = async (req, res) => {
   try {
@@ -311,76 +359,12 @@ export const forgotMembershipNumber = async (req, res) => {
       });
     }
 
-    // Send email with membership number
+    // Send email with membership number using template
     await brevoService.sendEmail({
       to: member.email,
-      subject: 'Your Gym Membership Number',
-      htmlContent: `
-        <!DOCTYPE html>
-        <html>
-        <head>
-          <style>
-            body { font-family: Arial, sans-serif; line-height: 1.6; color: #333; }
-            .container { max-width: 600px; margin: 0 auto; padding: 20px; }
-            .header { background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; padding: 30px; text-align: center; border-radius: 10px 10px 0 0; }
-            .content { background: #f9f9f9; padding: 30px; border-radius: 0 0 10px 10px; }
-            .membership-card { background: white; border: 2px dashed #667eea; padding: 20px; text-align: center; border-radius: 10px; margin: 20px 0; }
-            .membership-number { font-size: 32px; font-weight: bold; color: #667eea; letter-spacing: 2px; margin: 10px 0; }
-            .button { display: inline-block; padding: 12px 24px; background: #667eea; color: white; text-decoration: none; border-radius: 5px; margin-top: 20px; }
-            .footer { margin-top: 30px; text-align: center; color: #666; font-size: 12px; }
-          </style>
-        </head>
-        <body>
-          <div class="container">
-            <div class="header">
-              <h1>🔑 Membership Number Recovery</h1>
-            </div>
-            <div class="content">
-              <p>Hello ${member.first_name},</p>
-              <p>We received a request to retrieve your membership number. Here it is:</p>
-              
-              <div class="membership-card">
-                <p style="margin: 0; color: #666;">Your Membership Number</p>
-                <div class="membership-number">${member.membership_number}</div>
-                <p style="margin: 10px 0 0; color: #666;">Keep this number safe for future logins</p>
-              </div>
-
-              <p><strong>Account Details:</strong></p>
-              <ul>
-                <li>Name: ${member.first_name} ${member.last_name}</li>
-                <li>Email: ${member.email}</li>
-                <li>Status: ${member.status}</li>
-              </ul>
-
-              <p>If you didn't request this, please ignore this email or contact support.</p>
-              
-              <center>
-                <a href="${process.env.APP_URL || 'http://localhost:3000'}/login" class="button">
-                  Go to Login
-                </a>
-              </center>
-            </div>
-            <div class="footer">
-              <p>© ${new Date().getFullYear()} Gym Management. All rights reserved.</p>
-            </div>
-          </div>
-        </body>
-        </html>
-      `,
-      textContent: `
-        Hello ${member.first_name},
-        
-        Your membership number is: ${member.membership_number}
-        
-        Account Details:
-        - Name: ${member.first_name} ${member.last_name}
-        - Email: ${member.email}
-        - Status: ${member.status}
-        
-        If you didn't request this, please ignore this email or contact support.
-        
-        Go to login: ${process.env.APP_URL || 'http://localhost:3000'}/login
-      `
+      subject: emailTemplates.forgotMembership(member).subject,
+      htmlContent: emailTemplates.forgotMembership(member).htmlContent,
+      textContent: emailTemplates.forgotMembership(member).textContent
     });
 
     console.log('✅ Membership number email sent to:', member.email);

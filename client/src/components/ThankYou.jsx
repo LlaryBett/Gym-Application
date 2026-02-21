@@ -246,7 +246,7 @@ const ThankYou = () => {
                                         <span className="text-orange-500 font-mono font-bold text-base">{member.membershipNumber}</span>
                                         <button
                                             onClick={handleCopyMembership}
-                                            className="p-1.5 hover:bg-orange-50 rounded-lg transition group relative"
+                                            className="p-1.5 hover:bg-orange-50 rounded-full transition group relative"
                                             title="Copy membership number"
                                         >
                                             {copied ? (
@@ -284,7 +284,7 @@ const ThankYou = () => {
                     <div className="flex flex-col sm:flex-row gap-3 justify-center relative z-10">
                         <Link 
                             to="/" 
-                            className="group inline-flex items-center justify-center gap-2 bg-gray-900 text-white font-bold px-6 py-3 rounded-xl text-sm hover:bg-gray-800 transition-all hover:scale-105 relative overflow-hidden shadow-md"
+                            className="group inline-flex items-center justify-center gap-2 bg-gray-900 text-white font-bold px-6 py-3 rounded-full text-sm hover:bg-gray-800 transition-all hover:scale-105 relative overflow-hidden shadow-md"
                         >
                             <span className="relative z-10">RETURN TO HOME</span>
                             <FaArrowRight className="group-hover:translate-x-1 transition-transform relative z-10 text-sm" />
@@ -292,7 +292,7 @@ const ThankYou = () => {
                         
                         <Link 
                             to="/login" 
-                            className="inline-flex items-center justify-center gap-2 bg-orange-500 text-white font-bold px-6 py-3 rounded-xl text-sm hover:bg-orange-600 transition-all hover:scale-105 relative overflow-hidden shadow-md"
+                            className="inline-flex items-center justify-center gap-2 bg-orange-500 text-white font-bold px-6 py-3 rounded-full text-sm hover:bg-orange-600 transition-all hover:scale-105 relative overflow-hidden shadow-md"
                         >
                             <FaFire className="text-base relative z-10" />
                             <span className="relative z-10">PROCEED TO LOGIN</span>

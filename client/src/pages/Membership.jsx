@@ -188,7 +188,7 @@ const Membership = () => {
 
                   <div className="mb-4 md:mb-6">
                     <span className="text-3xl md:text-4xl font-bold">
-                      ${billingCycle === 'monthly' ? plan.price.monthly : plan.price.yearly}
+                      KSH {billingCycle === 'monthly' ? plan.price.monthly : plan.price.yearly}
                     </span>
                     <span className={`text-sm md:text-base ${plan.highlighted ? 'text-orange-100' : 'text-gray-600'}`}>
                       /{billingCycle === 'monthly' ? 'month' : 'year'}
