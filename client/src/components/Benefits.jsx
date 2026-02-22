@@ -1,6 +1,8 @@
 import React from 'react';
+import { useNavigate } from 'react-router-dom';
 
 export default function Benefits() {
+  const navigate = useNavigate();
   const BENEFITS = [
     {
       id: 1,
@@ -210,7 +212,10 @@ export default function Benefits() {
                     </div>
                   )}
                   
-                  <button className="inline-flex items-center text-orange-500 font-semibold hover:text-orange-600 transition-colors group text-sm md:text-base">
+                  <button
+                    onClick={() => navigate('/about', { state: { benefitId: benefit.id } })}
+                    className="inline-flex items-center text-orange-500 font-semibold hover:text-orange-600 transition-colors group text-sm md:text-base"
+                  >
                     Learn More
                     <svg className="w-4 h-4 md:w-5 md:h-5 ml-2 group-hover:translate-x-1 transition-transform" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 8l4 4m0 0l-4 4m4-4H3" />

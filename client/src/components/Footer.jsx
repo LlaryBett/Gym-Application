@@ -1,4 +1,5 @@
 import React from 'react'
+import { Link } from 'react-router-dom'
 import {
   FaFacebookF,
   FaXTwitter,
@@ -34,10 +35,10 @@ const Footer = () => {
           <div>
             <h4 className="font-semibold mb-3 md:mb-4 text-base md:text-lg">Quick Links</h4>
             <ul className="space-y-2 text-sm text-gray-400">
-              <li><a href="#" className="hover:text-orange-500 transition">Home</a></li>
-              <li><a href="#" className="hover:text-orange-500 transition">Services</a></li>
-              <li><a href="#" className="hover:text-orange-500 transition">Membership</a></li>
-              <li><a href="#" className="hover:text-orange-500 transition">About Us</a></li>
+              <li><Link to="/" className="hover:text-orange-500 transition">Home</Link></li>
+              <li><Link to="/services" className="hover:text-orange-500 transition">Services</Link></li>
+              <li><Link to="/membership" className="hover:text-orange-500 transition">Membership</Link></li>
+              <li><Link to="/about" className="hover:text-orange-500 transition">About Us</Link></li>
             </ul>
           </div>
 
@@ -45,10 +46,10 @@ const Footer = () => {
           <div>
             <h4 className="font-semibold mb-3 md:mb-4 text-base md:text-lg">Features</h4>
             <ul className="space-y-2 text-sm text-gray-400">
-              <li><a href="#" className="hover:text-orange-500 transition">Personal Training</a></li>
-              <li><a href="#" className="hover:text-orange-500 transition">Group Classes</a></li>
-              <li><a href="#" className="hover:text-orange-500 transition">Nutrition Plans</a></li>
-              <li><a href="#" className="hover:text-orange-500 transition">Recovery & Wellness</a></li>
+              <li><Link to="/trainers" className="hover:text-orange-500 transition">Personal Training</Link></li>
+              <li><Link to="/programs-events" className="hover:text-orange-500 transition">Group Classes</Link></li>
+              <li><Link to="/services" className="hover:text-orange-500 transition">Nutrition Plans</Link></li>
+              <li><Link to="/services" className="hover:text-orange-500 transition">Recovery & Wellness</Link></li>
             </ul>
           </div>
 
@@ -92,16 +93,16 @@ const Footer = () => {
 
             {/* Optional socials under subscribe */}
             <div className="flex gap-4 mt-4 md:mt-5">
-              <a href="#" className="hover:text-orange-500 transition">
+              <a href="https://facebook.com" target="_blank" rel="noopener noreferrer" className="hover:text-orange-500 transition">
                 <FaFacebookF />
               </a>
-              <a href="#" className="hover:text-orange-500 transition">
+              <a href="https://x.com" target="_blank" rel="noopener noreferrer" className="hover:text-orange-500 transition">
                 <FaXTwitter />
               </a>
-              <a href="#" className="hover:text-orange-500 transition">
+              <a href="https://instagram.com" target="_blank" rel="noopener noreferrer" className="hover:text-orange-500 transition">
                 <FaInstagram />
               </a>
-              <a href="#" className="hover:text-orange-500 transition">
+              <a href="https://threads.net" target="_blank" rel="noopener noreferrer" className="hover:text-orange-500 transition">
                 <FaThreads />
               </a>
             </div>

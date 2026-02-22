@@ -1,12 +1,12 @@
 import React, { useState, useEffect } from 'react';
 import { useParams, Link, useNavigate } from 'react-router-dom';
 import toast from 'react-hot-toast';
-import { 
-  FaCalendarAlt, FaClock, FaUsers, FaCheckCircle, FaArrowLeft, FaTimes,
-  FaHeart, FaRegHeart, FaShare, FaFacebook, FaTwitter, FaWhatsapp, FaEnvelope,
+import {
+  FaCalendar, FaClock, FaUserGroup, FaCircleCheck, FaArrowLeft, FaX,
+  FaHeart, FaRegHeart, FaShare, FaFacebook, FaXTwitter, FaWhatsapp, FaEnvelope,
   FaLink, FaChevronLeft, FaChevronRight, FaPlay, FaMinus, FaPlus,
-  FaCrown, FaFire, FaExclamationCircle
-} from 'react-icons/fa';
+  FaCrown, FaFire, FaCircleExclamation
+} from 'react-icons/fa6';
 import { programService } from '../services/programService';
 import { useAuth } from '../hooks/authHooks';
 
@@ -256,7 +256,9 @@ const ProgramDetail = () => {
       <div className="pt-14 md:pt-20">
         <div className="container mx-auto px-4 md:px-16 py-16">
           <div className="text-center py-12">
-            <div className="text-red-500 text-4xl mb-4">⚠️</div>
+            <div className="text-red-500 text-4xl mb-4">
+              <FaCircleExclamation />
+            </div>
             <h3 className="text-xl font-bold text-gray-800 mb-2">Program not found</h3>
             <p className="text-gray-600 mb-4">{error || 'The program you are looking for does not exist.'}</p>
             <Link 
@@ -333,25 +335,45 @@ const ProgramDetail = () => {
                     
                     {/* Share Menu */}
                     {showShareMenu && (
-                      <div className="absolute right-0 mt-12 w-48 bg-white rounded-xl shadow-xl z-30 py-2">
-                        <button onClick={() => handleShare('facebook')} className="w-full px-4 py-2 text-left hover:bg-gray-100 flex items-center gap-3">
-                          <FaFacebook className="text-blue-600" /> Facebook
-                        </button>
-                        <button onClick={() => handleShare('twitter')} className="w-full px-4 py-2 text-left hover:bg-gray-100 flex items-center gap-3">
-                          <FaTwitter className="text-blue-400" /> Twitter
-                        </button>
-                        <button onClick={() => handleShare('whatsapp')} className="w-full px-4 py-2 text-left hover:bg-gray-100 flex items-center gap-3">
-                          <FaWhatsapp className="text-green-500" /> WhatsApp
-                        </button>
-                        <button onClick={() => handleShare('email')} className="w-full px-4 py-2 text-left hover:bg-gray-100 flex items-center gap-3">
-                          <FaEnvelope className="text-gray-600" /> Email
-                        </button>
-                        <div className="border-t my-2"></div>
-                        <button onClick={() => handleShare('copy')} className="w-full px-4 py-2 text-left hover:bg-gray-100 flex items-center gap-3">
-                          <FaLink className="text-gray-600" /> Copy Link
-                        </button>
-                      </div>
-                    )}
+  <div className="absolute right-0 mt-12 w-48 bg-white rounded-xl shadow-xl z-30 py-2 border border-gray-200">
+    <button 
+      onClick={() => handleShare('facebook')} 
+      className="w-full px-4 py-2 text-left hover:bg-orange-50 flex items-center gap-3 transition-colors"
+    >
+      <FaFacebook className="text-blue-600" /> 
+      <span className="text-gray-700">Facebook</span>
+    </button>
+    <button 
+      onClick={() => handleShare('twitter')} 
+      className="w-full px-4 py-2 text-left hover:bg-orange-50 flex items-center gap-3 transition-colors"
+    >
+      <FaXTwitter className="text-blue-400" /> 
+      <span className="text-gray-700">X</span>
+    </button>
+    <button 
+      onClick={() => handleShare('whatsapp')} 
+      className="w-full px-4 py-2 text-left hover:bg-orange-50 flex items-center gap-3 transition-colors"
+    >
+      <FaWhatsapp className="text-green-500" /> 
+      <span className="text-gray-700">WhatsApp</span>
+    </button>
+    <button 
+      onClick={() => handleShare('email')} 
+      className="w-full px-4 py-2 text-left hover:bg-orange-50 flex items-center gap-3 transition-colors"
+    >
+      <FaEnvelope className="text-gray-600" /> 
+      <span className="text-gray-700">Email</span>
+    </button>
+    <div className="border-t border-gray-200 my-2"></div>
+    <button 
+      onClick={() => handleShare('copy')} 
+      className="w-full px-4 py-2 text-left hover:bg-orange-50 flex items-center gap-3 transition-colors"
+    >
+      <FaLink className="text-gray-600" /> 
+      <span className="text-gray-700">Copy Link</span>
+    </button>
+  </div>
+)}
                   </button>
                 </div>
               </div>
@@ -384,7 +406,7 @@ const ProgramDetail = () => {
                   isAlmostFull ? 'bg-red-500' : 'bg-orange-500'
                 } text-white font-semibold mb-6`}>
                   <FaFire />
-                  {isAlmostFull ? '🔥 Almost full! ' : '⚡ Limited spots! '}
+                  {isAlmostFull ? 'Almost full!' : 'Limited spots!'}
                   Only {spotsLeft} {spotsLeft === 1 ? 'spot' : 'spots'} left
                 </div>
               )}
@@ -394,7 +416,7 @@ const ProgramDetail = () => {
               {/* Program Stats */}
               <div className="space-y-3 mb-6 pb-6 border-b border-gray-200">
                 <div className="flex items-center gap-3">
-                  <FaUsers className="text-orange-500 text-lg" />
+                  <FaUserGroup className="text-orange-500 text-lg" />
                   <span className="text-gray-700">{program.capacity || '0/20 enrolled'}</span>
                 </div>
                 <div className="flex items-center gap-3">
@@ -407,19 +429,19 @@ const ProgramDetail = () => {
               <h3 className="text-lg font-bold mb-3 text-orange-500">What You'll Get</h3>
               <ul className="space-y-2 mb-6">
                 <li className="flex items-start gap-2">
-                  <FaCheckCircle className="text-orange-500 mt-1 flex-shrink-0" />
+                  <FaCircleCheck className="text-orange-500 mt-1 flex-shrink-0" />
                   <span className="text-sm text-gray-700">Personalized workout plans tailored to your goals</span>
                 </li>
                 <li className="flex items-start gap-2">
-                  <FaCheckCircle className="text-orange-500 mt-1 flex-shrink-0" />
+                  <FaCircleCheck className="text-orange-500 mt-1 flex-shrink-0" />
                   <span className="text-sm text-gray-700">Expert coaching and form correction</span>
                 </li>
                 <li className="flex items-start gap-2">
-                  <FaCheckCircle className="text-orange-500 mt-1 flex-shrink-0" />
+                  <FaCircleCheck className="text-orange-500 mt-1 flex-shrink-0" />
                   <span className="text-sm text-gray-700">Nutrition guidance and meal planning</span>
                 </li>
                 <li className="flex items-start gap-2">
-                  <FaCheckCircle className="text-orange-500 mt-1 flex-shrink-0" />
+                  <FaCircleCheck className="text-orange-500 mt-1 flex-shrink-0" />
                   <span className="text-sm text-gray-700">Progress tracking and accountability</span>
                 </li>
               </ul>
@@ -447,7 +469,7 @@ const ProgramDetail = () => {
               onClick={() => setShowVideoModal(false)}
               className="absolute -top-12 right-0 text-white hover:text-orange-400 transition"
             >
-              <FaTimes size={24} />
+              <FaX size={24} />
             </button>
             <div className="aspect-video bg-black rounded-xl overflow-hidden">
               <video
@@ -541,7 +563,7 @@ const ProgramDetail = () => {
                 {enrolled ? (
                   <div className="text-center mb-6">
                     <div className="bg-green-100 text-green-700 px-4 py-3 rounded-lg mb-4">
-                      <FaCheckCircle className="inline mr-2" />
+                      <FaCircleCheck className="inline mr-2" />
                       You are enrolled in this program
                     </div>
                     <Link 
@@ -616,7 +638,7 @@ const ProgramDetail = () => {
                               <ul className="text-xs text-gray-600 space-y-1">
                                 {option.features?.map((feature, i) => (
                                   <li key={i} className="flex items-center gap-1">
-                                    <FaCheckCircle className="text-green-500 text-xs" /> {feature}
+                                    <FaCircleCheck className="text-green-500 text-xs" /> {feature}
                                   </li>
                                 ))}
                               </ul>
@@ -673,12 +695,12 @@ const ProgramDetail = () => {
               onClick={() => setShowSuccessModal(false)}
               className="absolute top-4 right-4 text-gray-400 hover:text-gray-600 transition"
             >
-              <FaTimes size={20} />
+              <FaX size={20} />
             </button>
 
             <div className="text-center">
               <div className="bg-green-100 rounded-full w-20 h-20 flex items-center justify-center mx-auto mb-6">
-                <FaCheckCircle className="text-green-600 text-4xl" />
+                <FaCircleCheck className="text-green-600 text-4xl" />
               </div>
               
               <h3 className="text-2xl font-bold text-gray-900 mb-2">

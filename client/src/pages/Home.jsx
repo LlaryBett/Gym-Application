@@ -1,3 +1,4 @@
+import React, { useState } from 'react'
 import Button from '../components/Button'
 import Services from './Services'
 import CTA from '../components/CTA'
@@ -8,6 +9,7 @@ import { FeaturedServices } from '../components/FeaturedServices'
 import { Link } from 'react-router-dom' // ✅ Add this import
 
 export default function Home() {
+  const [showVideoModal, setShowVideoModal] = useState(false)
   const scrollToSection = (sectionId) => {
     const element = document.getElementById(sectionId)
     if (element) {
@@ -103,7 +105,7 @@ export default function Home() {
 
                 <button 
                   className="flex items-center justify-center gap-1 sm:gap-2 px-3 sm:px-6 py-2 sm:py-3 text-black-700 hover:text-orange-500 font-semibold transition-colors text-sm sm:text-base"
-                  onClick={() => scrollToSection('services')}
+                  onClick={() => setShowVideoModal(true)}
                 >
                   <div className="w-8 h-8 sm:w-10 sm:h-10 bg-orange-500 rounded-full flex items-center justify-center flex-shrink-0">
                     <svg
@@ -248,6 +250,33 @@ export default function Home() {
 
       {/* CTA Component (from CTA.js) */}
       <CTA />
+
+      {/* Video Modal */}
+      {showVideoModal && (
+        <div className="fixed inset-0 bg-black/70 z-50 flex items-center justify-center p-4" onClick={() => setShowVideoModal(false)}>
+          <div className="w-full max-w-2xl bg-black rounded-xl overflow-hidden relative" onClick={(e) => e.stopPropagation()}>
+            <button
+              onClick={() => setShowVideoModal(false)}
+              className="absolute top-3 right-3 text-white text-2xl hover:text-gray-300 transition z-10 bg-black/50 rounded-full w-10 h-10 flex items-center justify-center"
+              aria-label="Close video"
+            >
+              ✕
+            </button>
+            <div className="relative pt-[56.25%]">
+              <video
+                src="/4745626-hd_1280_720_25fps.mp4"
+                controls
+                autoPlay
+                loop
+                muted
+                className="absolute inset-0 w-full h-full"
+              >
+                Your browser does not support the video tag.
+              </video>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   )
 }

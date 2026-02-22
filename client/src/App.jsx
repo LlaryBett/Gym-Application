@@ -20,6 +20,7 @@ import BookService from './pages/BookService'
 import Dashboard from './pages/Dashboard'
 import Profile from './pages/Profile'
 import ForgotMembership from './pages/ForgotMembership'
+import AboutUs from './pages/Aboutus'
 
 function App() {
   return (
@@ -60,6 +61,7 @@ function App() {
             <Route path="/dashboard" element={<Dashboard />} />
             <Route path="/profile" element={<Profile />} />
             <Route path="/forgot-membership" element={<ForgotMembership />} />
+            <Route path="/about" element={<AboutUs />} />
           </Routes>
         </main>
         

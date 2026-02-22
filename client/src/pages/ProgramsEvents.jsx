@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { FaCalendarAlt, FaSearch } from 'react-icons/fa';
+import { FaCalendarAlt, FaSearch, FaUser, FaClock, FaMapMarkerAlt, FaUsers } from 'react-icons/fa';
 import { Link } from 'react-router-dom';
 import CTA from '../components/CTA';
 import { programService } from '../services/programService';
@@ -64,8 +64,32 @@ const ProgramsEvents = () => {
     return schedules[day].map(s => ({
       time: `${s.start_time?.substring(0,5)} - ${s.end_time?.substring(0,5)}`,
       name: s.class_name,
-      id: s.program_id
+      id: s.program_id,
+      instructor: s.instructor,
+      location: s.location,
+      enrolled: s.enrolled,
+      capacity: s.capacity,
+      program_title: s.program_title,
+      program_image: s.program_image,
+      status: s.status
     }));
+  };
+
+  // Helper to get status badge color
+  const getStatusBadge = (status) => {
+    const statusConfig = {
+      'active': { bg: 'bg-green-100', text: 'text-green-800', label: 'Active' },
+      'cancelled': { bg: 'bg-red-100', text: 'text-red-800', label: 'Cancelled' },
+      'full': { bg: 'bg-yellow-100', text: 'text-yellow-800', label: 'Full' },
+      'default': { bg: 'bg-gray-100', text: 'text-gray-800', label: status }
+    };
+    
+    const config = statusConfig[status] || statusConfig.default;
+    return (
+      <span className={`${config.bg} ${config.text} px-2 py-0.5 rounded-full text-xs font-medium`}>
+        {config.label}
+      </span>
+    );
   };
 
   if (loading) {
@@ -250,8 +274,10 @@ const ProgramsEvents = () => {
             <div className="lg:w-1/2 flex justify-center items-center">
               <div className="w-full h-48 sm:h-64 lg:h-[400px] bg-gray-300 rounded-xl overflow-hidden flex justify-center items-center">
                 <video
-                  src="/videos/class-preview.mp4"
-                  controls
+                  src="/10381187-hd_1280_720_30fps.mp4"
+                  autoPlay
+                  loop
+                  muted
                   className="w-full h-full object-cover"
                 >
                   Your browser does not support the video tag.
@@ -261,38 +287,68 @@ const ProgramsEvents = () => {
 
             {/* Right — Timetable */}
             <div className="lg:w-1/2 flex flex-col">
-              {/* Day Toggle */}
+              {/* Day Toggle - Fixed hover issue */}
               <div className="flex gap-1 md:gap-2 mb-4 md:mb-6 bg-white p-1 md:p-2 rounded-full border shadow-sm overflow-x-auto">
                 {DAYS.map(day => (
                   <button
                     key={day}
                     onClick={() => setActiveDay(day)}
-                    className={`flex-1 py-2 rounded-full text-xs md:text-sm font-semibold transition whitespace-nowrap
-                      ${activeDay === day
-                        ? 'bg-black text-white'
-                        : 'text-gray-600 hover:bg-gray-100'}`}
+                    className={`flex-1 py-2 rounded-full text-xs md:text-sm font-semibold transition-colors whitespace-nowrap ${
+                      activeDay === day
+                        ? 'bg-orange-500 text-white hover:bg-orange-600' // ✅ Fixed: Now uses orange and has hover state
+                        : 'bg-gray-100 text-gray-700 hover:bg-gray-200' // ✅ Fixed: Has background even when not active
+                    }`}
                   >
                     {day}
                   </button>
                 ))}
               </div>
 
-              {/* Timetable */}
+              {/* Timetable with Instructor & Status - No booked spots */}
               <div className="bg-white rounded-xl border shadow-sm divide-y flex flex-col">
                 {getDaySchedule(activeDay).length > 0 ? (
                   getDaySchedule(activeDay).map((item, idx) => (
-                    <div
-                      key={idx}
-                      className="flex flex-col sm:flex-row items-start sm:items-center justify-between px-4 md:px-6 py-3 md:py-4 gap-2 sm:gap-0"
-                    >
-                      <span className="text-gray-500 font-medium text-xs md:text-sm">{item.time}</span>
-                      <span className="font-semibold text-gray-800 text-sm md:text-base">{item.name}</span>
-                      <Link
-                        to={`/programs/${item.id}`}
-                        className="bg-black text-white px-3 md:px-4 py-1.5 rounded-full text-xs md:text-sm font-semibold hover:bg-gray-800 transition"
-                      >
-                        View Details
-                      </Link>
+                    <div key={idx} className="p-4 md:p-6 hover:bg-gray-50 transition">
+                      {/* Top row - Time and Status */}
+                      <div className="flex flex-wrap items-center justify-between gap-2 mb-3">
+                        <div className="flex items-center gap-2">
+                          <FaClock className="text-orange-500 text-xs" />
+                          <span className="text-gray-500 font-medium text-xs md:text-sm">{item.time}</span>
+                        </div>
+                        {getStatusBadge(item.status)}
+                      </div>
+
+                      {/* Class Name and Program */}
+                      <h3 className="font-bold text-gray-900 text-base md:text-lg mb-2">{item.name}</h3>
+                      <p className="text-xs text-gray-500 mb-3">Part of: {item.program_title}</p>
+
+                      {/* Instructor and Location */}
+                      <div className="grid grid-cols-2 gap-3 mb-3">
+                        <div className="flex items-center gap-2">
+                          <FaUser className="text-orange-500 text-xs" />
+                          <span className="text-gray-700 text-xs md:text-sm">{item.instructor}</span>
+                        </div>
+                        <div className="flex items-center gap-2">
+                          <FaMapMarkerAlt className="text-orange-500 text-xs" />
+                          <span className="text-gray-700 text-xs md:text-sm">{item.location}</span>
+                        </div>
+                      </div>
+
+                      {/* Bottom row - All members welcome message */}
+                      <div className="flex flex-wrap items-center justify-between gap-2 mt-2 pt-2 border-t border-gray-100">
+                        <div className="flex items-center gap-2">
+                          <FaUsers className="text-orange-500 text-xs" />
+                          <span className="text-xs text-gray-600">
+                            All members welcome • Just show up and join!
+                          </span>
+                        </div>
+                        <Link
+                          to={`/programs/${item.id}`}
+                          className="bg-black text-white px-4 py-1.5 rounded-full text-xs font-semibold hover:bg-gray-800 transition"
+                        >
+                          View Details
+                        </Link>
+                      </div>
                     </div>
                   ))
                 ) : (
