@@ -2,6 +2,7 @@ import { Routes, Route } from 'react-router-dom'
 import { Toaster } from 'react-hot-toast'
 import Header from './components/Header'
 import Footer from './components/Footer'
+import FloatingHelpline from './components/FloatingHelpline'
 import Home from './pages/Home'
 import About from './pages/Trainers'
 import Services from './pages/Services'
@@ -66,6 +67,7 @@ function App() {
         </main>
         
         <Footer />
+        <FloatingHelpline />
       </AuthProvider>
     </div>
   )
