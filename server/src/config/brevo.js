@@ -22,31 +22,58 @@ class BrevoService {
     this.adminEmail = process.env.ADMIN_EMAIL || 'admin@gymapp.com';
   }
 
-  async sendEmail({ to, subject, htmlContent, textContent, sender = this.defaultSender, params = {} }) {
+ async sendEmail({ 
+  to, 
+  subject, 
+  htmlContent, 
+  textContent, 
+  sender = this.defaultSender, 
+  params = {} 
+}) {
+  console.log("📨 ===== BREVO SEND START =====");
+  console.log("➡️ To:", to);
+  console.log("➡️ Subject:", subject);
+  console.log("➡️ API Key exists?:", !!process.env.BREVO_API_KEY);
+  console.log("➡️ Sender:", sender);
+
   try {
     const payload = {
       sender,
-      to: [{ email: to }],  // add name if you want: { email: to, name: 'User' }
+      to: [{ email: to }],
       subject,
       htmlContent,
       textContent: textContent || undefined,
     };
 
-    // ← Critical fix: omit params entirely if empty to avoid "params is blank"
     if (Object.keys(params).length > 0) {
       payload.params = params;
     }
 
+    console.log("📦 Payload prepared");
+    console.log("📡 Sending to Brevo...");
+
     const response = await this.client.transactionalEmails.sendTransacEmail(payload);
+
+    console.log("✅ Brevo SUCCESS");
+    console.log("📬 Response:", response);
+
+    console.log("📨 ===== BREVO SEND END =====");
 
     return {
       success: true,
-      messageId: response.messageId || response.id || 'sent',  // sometimes it's .id or .messageId
+      messageId: response.messageId || response.id || 'sent',
       data: response
     };
+
   } catch (error) {
-    // Improved logging: Brevo often puts details in error.body
-    console.error('Brevo send error:', error?.body || error?.response?.body || error?.message || error);
+    console.log("❌ BREVO FAILED");
+    console.error("❌ Full error:", error);
+    console.error("❌ Error body:", error?.body);
+    console.error("❌ Error response:", error?.response?.body);
+    console.error("❌ Error message:", error?.message);
+
+    console.log("📨 ===== BREVO SEND END (FAILED) =====");
+
     throw error;
   }
 }
