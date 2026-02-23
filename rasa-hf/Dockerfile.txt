@@ -9,8 +9,8 @@ WORKDIR /app
 # Ensure models are present
 RUN if [ -d "models" ]; then echo "✅ Models found"; else echo "❌ No models directory"; fi
 
-# Expose Rasa API port
-EXPOSE 5005
+# Hugging Face Spaces require port 7860
+EXPOSE 7860
 
-# Start Rasa server with API enabled
-CMD ["run", "--enable-api", "--cors", "*", "--debug"]
+# Start Rasa server with API enabled on port 7860
+CMD ["run", "--enable-api", "--cors", "*", "--port", "7860", "--debug"]
