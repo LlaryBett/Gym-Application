@@ -1,0 +1,190 @@
+version: "3.1"
+
+stories:
+- story: greet and ask membership
+  steps:
+  - intent: greet
+  - action: utter_greet
+  - intent: ask_membership_plans
+  - action: utter_ask_membership_plans
+
+- story: payment issue flow - complete
+  steps:
+  - intent: ask_payment_issues
+  - action: utter_ask_payment_issues
+  - intent: provide_payment_details
+  - action: utter_ask_payment_investigating
+  - action: utter_payment_resolved
+  - intent: thanks
+  - action: utter_thanks
+
+- story: payment issue - unresolved (escalate)
+  steps:
+  - intent: ask_payment_issues
+  - action: utter_ask_payment_issues
+  - intent: provide_payment_details
+  - action: utter_ask_payment_investigating
+  - action: utter_payment_unresolved
+  - intent: affirm
+  - action: utter_ask_escalate_received
+  - intent: thanks
+  - action: utter_thanks
+
+- story: payment issue - immediate escalation
+  steps:
+  - intent: ask_payment_issues
+  - action: utter_ask_payment_issues
+  - intent: ask_escalate_to_admin
+  - action: utter_ask_escalate_to_admin
+  - intent: affirm
+  - action: utter_ask_escalate_received
+  - intent: thanks
+  - action: utter_thanks
+
+- story: payment methods inquiry
+  steps:
+  - intent: ask_payment_methods
+  - action: utter_ask_payment_methods
+  - intent: thanks
+  - action: utter_thanks
+
+- story: refund request
+  steps:
+  - intent: ask_refund
+  - action: utter_ask_refund
+  - intent: affirm
+  - action: utter_ask_escalate_received
+
+- story: technical support - simple
+  steps:
+  - intent: ask_technical_support
+  - action: utter_ask_technical_support
+  - intent: thanks
+  - action: utter_thanks
+
+- story: technical support - escalate
+  steps:
+  - intent: ask_technical_support
+  - action: utter_ask_technical_support
+  - intent: ask_escalate_to_admin
+  - action: utter_ask_escalate_to_admin
+  - intent: affirm
+  - action: utter_ask_escalate_received
+
+- story: report issue - facility
+  steps:
+  - intent: report_issue
+  - action: utter_report_issue_received
+  - intent: thanks
+  - action: utter_thanks
+
+- story: report issue - escalate
+  steps:
+  - intent: report_issue
+  - action: utter_report_issue_received
+  - intent: ask_escalate_to_admin
+  - action: utter_ask_escalate_to_admin
+  - intent: affirm
+  - action: utter_ask_escalate_received
+
+- story: ask classes then trainers
+  steps:
+  - intent: ask_classes
+  - action: utter_ask_classes
+  - intent: ask_trainers
+  - action: utter_ask_trainers
+
+- story: ask price then trial
+  steps:
+  - intent: ask_price
+  - action: utter_ask_price
+  - intent: ask_trial
+  - action: utter_ask_trial
+
+- story: full new member journey
+  steps:
+  - intent: greet
+  - action: utter_greet
+  - intent: ask_membership_plans
+  - action: utter_ask_membership_plans
+  - intent: ask_price
+  - action: utter_ask_price
+  - intent: ask_trial
+  - action: utter_ask_trial
+  - intent: affirm
+  - action: utter_thanks
+
+- story: ask location and hours
+  steps:
+  - intent: ask_location
+  - action: utter_ask_location
+  - intent: ask_hours
+  - action: utter_ask_hours
+
+- story: ask facilities and classes
+  steps:
+  - intent: ask_facilities
+  - action: utter_ask_facilities
+  - intent: ask_classes
+  - action: utter_ask_classes
+
+- story: ask trainers and pricing
+  steps:
+  - intent: ask_trainers
+  - action: utter_ask_trainers
+  - intent: ask_price
+  - action: utter_ask_price
+
+- story: ask contact and thanks
+  steps:
+  - intent: ask_contact
+  - action: utter_ask_contact
+  - intent: thanks
+  - action: utter_thanks
+
+- story: complain flow
+  steps:
+  - intent: complain_feedback
+  - action: utter_complain_feedback
+  - intent: thanks
+  - action: utter_thanks
+
+- story: complain - escalate
+  steps:
+  - intent: complain_feedback
+  - action: utter_complain_feedback
+  - intent: ask_escalate_to_admin
+  - action: utter_ask_escalate_to_admin
+  - intent: affirm
+  - action: utter_ask_escalate_received
+
+- story: diet and nutrition inquiry
+  steps:
+  - intent: ask_diet_nutrition
+  - action: utter_ask_diet_nutrition
+  - intent: ask_price
+  - action: utter_ask_price
+
+- story: booking inquiry
+  steps:
+  - intent: ask_bookings
+  - action: utter_ask_bookings
+  - intent: thanks
+  - action: utter_thanks
+
+- story: bot challenge
+  steps:
+  - intent: bot_challenge
+  - action: utter_iamabot
+
+- story: say goodbye
+  steps:
+  - intent: goodbye
+  - action: utter_goodbye
+
+- story: escalate directly
+  steps:
+  - intent: ask_escalate_to_admin
+  - action: utter_ask_escalate_to_admin
+  - intent: affirm
+  - action: utter_ask_escalate_received

@@ -1,0 +1,16 @@
+FROM rasa/rasa:3.6.1
+
+USER root
+
+# Copy all Rasa files
+COPY . /app
+WORKDIR /app
+
+# Ensure models are present
+RUN if [ -d "models" ]; then echo "✅ Models found"; else echo "❌ No models directory"; fi
+
+# Expose Rasa API port
+EXPOSE 5005
+
+# Start Rasa server with API enabled
+CMD ["run", "--enable-api", "--cors", "*", "--debug"]
