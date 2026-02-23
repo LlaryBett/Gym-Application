@@ -1,10 +1,11 @@
 // controllers/authController.js
 import Member from '../models/Members.js';
-import MembershipPlan from '../models/MembershipPlan.js'; // ✅ ADD THIS
-import MemberMembership from '../models/MemberMembership.js'; // ✅ ADD THIS
+import MembershipPlan from '../models/MembershipPlan.js';
+import MemberMembership from '../models/MemberMembership.js';
 import { memberSchemas } from '../utils/validation.js';
 import brevoService from '../config/brevo.js';
 import { emailTemplates } from '../utils/emailTemplates.js';
+import jwt from 'jsonwebtoken'; // ✅ ADD THIS
 
 // Register new member (public route)
 export const registerMember = async (req, res) => {
@@ -74,9 +75,9 @@ export const registerMember = async (req, res) => {
       }
     }
     
-    // ===== SEND EMAILS IN BACKGROUND (don't await) =====
+    // ===== SEND EMAILS IN BACKGROUND =====
     
-    // 1. Send welcome email to new member (with trial info if applicable)
+    // 1. Send welcome email to new member
     const welcomeTemplate = isTrial ? emailTemplates.trialWelcome : emailTemplates.welcome;
     
     brevoService.sendEmail({
@@ -106,7 +107,7 @@ export const registerMember = async (req, res) => {
       phone: member.cell_phone,
       status: member.status,
       createdAt: member.created_at,
-      ...(trialInfo && { trial: trialInfo }) // Add trial info if applicable
+      ...(trialInfo && { trial: trialInfo })
     };
     
     // Customize next steps for trial users
@@ -151,7 +152,7 @@ export const registerMember = async (req, res) => {
   }
 };
 
-// Login with email and membership number
+// ✅ UPDATED: Login with JWT token
 export const login = async (req, res) => {
   try {
     const { email, membership_number, remember_me } = req.body;
@@ -192,44 +193,32 @@ export const login = async (req, res) => {
       name: `${member.first_name} ${member.last_name}`.trim(),
       email: member.email,
       phone: member.cell_phone,
-      status: member.status
+      status: member.status,
+      role: member.role || 'member' // Add role if you have it
     };
 
-    // Store in session if available
-    if (req.session) {
-      req.session.user = userData;
-      req.session.isAuthenticated = true;
-      
-      if (remember_me) {
-        req.session.cookie.maxAge = 30 * 24 * 60 * 60 * 1000; // 30 days
+    // Generate JWT token
+    const token = jwt.sign(
+      { 
+        id: member.id,
+        email: member.email,
+        name: userData.name,
+        role: userData.role
+      },
+      process.env.JWT_SECRET,
+      { expiresIn: remember_me ? '30d' : '7d' }
+    );
+
+    // Return token instead of session
+    res.status(200).json({
+      success: true,
+      message: 'Login successful',
+      data: {
+        user: userData,
+        token: token
       }
+    });
 
-      // Save session explicitly before responding
-      req.session.save((err) => {
-        if (err) {
-          console.error('Session save error:', err);
-          return res.status(500).json({
-            success: false,
-            message: 'Error creating session. Please try again.'
-          });
-        }
-
-        // Send response only after session is confirmed saved
-        res.status(200).json({
-          success: true,
-          message: 'Login successful',
-          data: {
-            user: userData
-          }
-        });
-      });
-    } else {
-      // If no session (shouldn't happen), return error
-      res.status(500).json({
-        success: false,
-        message: 'Session not initialized'
-      });
-    }
   } catch (error) {
     console.error('Login error:', error);
     res.status(500).json({
@@ -240,38 +229,34 @@ export const login = async (req, res) => {
   }
 };
 
-// Get current authenticated user
+// ✅ UPDATED: Get current user from token
 export const getCurrentUser = async (req, res) => {
   try {
-    // Check both user AND isAuthenticated flag
-    if (!req.session || !req.session.user || !req.session.isAuthenticated) {
+    // Get token from Authorization header
+    const authHeader = req.headers.authorization;
+    if (!authHeader || !authHeader.startsWith('Bearer ')) {
       return res.status(401).json({
         success: false,
-        message: 'Not authenticated'
+        message: 'No token provided'
       });
     }
 
-    const member = await Member.findById(req.session.user.id);
+    const token = authHeader.split(' ')[1];
+    
+    // Verify token
+    const decoded = jwt.verify(token, process.env.JWT_SECRET);
+    
+    // Get user from database
+    const member = await Member.findById(decoded.id);
 
     if (!member) {
-      // Clear invalid session
-      req.session.destroy();
       return res.status(404).json({
         success: false,
         message: 'User not found'
       });
     }
 
-    // Update session with latest data
-    req.session.user = {
-      id: member.id,
-      membershipNumber: member.membership_number,
-      name: `${member.first_name} ${member.last_name}`.trim(),
-      email: member.email,
-      phone: member.cell_phone,
-      status: member.status
-    };
-
+    // Return user data
     res.status(200).json({
       success: true,
       data: {
@@ -282,6 +267,7 @@ export const getCurrentUser = async (req, res) => {
           email: member.email,
           phone: member.cell_phone,
           status: member.status,
+          role: member.role || 'member',
           createdAt: member.created_at,
           
           // EMERGENCY CONTACT FIELDS
@@ -294,7 +280,20 @@ export const getCurrentUser = async (req, res) => {
         }
       }
     });
+
   } catch (error) {
+    if (error.name === 'JsonWebTokenError') {
+      return res.status(401).json({
+        success: false,
+        message: 'Invalid token'
+      });
+    }
+    if (error.name === 'TokenExpiredError') {
+      return res.status(401).json({
+        success: false,
+        message: 'Token expired'
+      });
+    }
     console.error('Get current user error:', error);
     res.status(500).json({
       success: false,
@@ -303,36 +302,12 @@ export const getCurrentUser = async (req, res) => {
   }
 };
 
-// Logout current user
+// ✅ UPDATED: Logout (client just removes token)
 export const logout = async (req, res) => {
-  try {
-    if (req.session) {
-      req.session.destroy((err) => {
-        if (err) {
-          return res.status(500).json({
-            success: false,
-            message: 'Could not log out. Please try again.'
-          });
-        }
-        res.clearCookie('connect.sid');
-        res.status(200).json({
-          success: true,
-          message: 'Logged out successfully'
-        });
-      });
-    } else {
-      res.status(200).json({
-        success: true,
-        message: 'Logged out successfully'
-      });
-    }
-  } catch (error) {
-    console.error('Logout error:', error);
-    res.status(500).json({
-      success: false,
-      message: 'Internal server error'
-    });
-  }
+  res.status(200).json({
+    success: true,
+    message: 'Logged out successfully'
+  });
 };
 
 // Forgot membership number - send membership number to user's email

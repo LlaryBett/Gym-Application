@@ -1,3 +1,4 @@
+// context/AuthProvider.jsx
 import React, { useState, useEffect } from 'react';
 import { authAPI } from '../services/api';
 import AuthContext from '../hooks/authContextValue';
@@ -13,8 +14,16 @@ export default function AuthProvider({ children }) {
   }, []);
 
   const checkAuthStatus = async () => {
+    // Check if token exists first
+    const token = localStorage.getItem('token');
+    if (!token) {
+      console.log('❌ No token found');
+      setLoading(false);
+      return;
+    }
+
     try {
-      console.log('🔍 Checking auth status...');
+      console.log('🔍 Checking auth status with token...');
       const response = await authAPI.getCurrentUser();
       
       if (response.success && response.data?.user) {
@@ -22,10 +31,12 @@ export default function AuthProvider({ children }) {
         setUser(response.data.user);
       } else {
         console.log('❌ Not authenticated');
+        localStorage.removeItem('token'); // Clear invalid token
         setUser(null);
       }
     } catch (error) {
       console.error('❌ Auth verification failed:', error);
+      localStorage.removeItem('token'); // Clear token on error
       setUser(null);
     } finally {
       setLoading(false);
@@ -39,6 +50,7 @@ export default function AuthProvider({ children }) {
       
       if (response.success) {
         setUser(response.data.user);
+        // Token is already stored in api.js login method
         return { success: true, user: response.data.user };
       }
       
@@ -74,6 +86,8 @@ export default function AuthProvider({ children }) {
     } catch (error) {
       console.error('Logout error:', error);
     } finally {
+      // Always clear local state and token
+      localStorage.removeItem('token');
       setUser(null);
       setError(null);
     }

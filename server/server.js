@@ -5,10 +5,8 @@ import helmet from 'helmet';
 import morgan from 'morgan';
 import path from 'path';
 import { fileURLToPath } from 'url';
-import session from 'express-session';
-import pgSession from 'connect-pg-simple';
 import pool from './src/database/db.js';
-import redisClient from './src/config/redis.js'; // ✅ ADDED Redis client
+import redisClient from './src/config/redis.js';
 
 dotenv.config();
 
@@ -16,9 +14,6 @@ const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
 const app = express();
-
-// Session store setup
-const PgSession = pgSession(session);
 
 // Security middleware
 app.use(helmet({
@@ -33,31 +28,19 @@ app.use(helmet({
   crossOriginEmbedderPolicy: false
 }));
 
-// CORS configuration
+// ✅ UPDATED: CORS configuration (no credentials needed with JWT)
 app.use(cors({
-  origin: process.env.APP_URL || ['http://localhost:3000', 'http://localhost:5173'],
-  credentials: true,
+  origin: [
+    process.env.APP_URL || 'http://localhost:5173',
+    'https://gym-application-sooty.vercel.app',
+    'http://localhost:3000',
+    'http://localhost:5173'
+  ],
   methods: ['GET', 'POST', 'PUT', 'DELETE', 'PATCH', 'OPTIONS'],
-  allowedHeaders: ['Content-Type', 'Authorization', 'X-Requested-With', 'Cookie']
+  allowedHeaders: ['Content-Type', 'Authorization', 'X-Requested-With']
 }));
 
-// Session middleware
-app.use(session({
-  store: new PgSession({
-    pool: pool,
-    tableName: 'session',
-    createTableIfMissing: true
-  }),
-  secret: process.env.SESSION_SECRET || 'your-secret-key-change-this',
-  resave: false,
-  saveUninitialized: false,
-  cookie: {
-    secure: process.env.NODE_ENV === 'production',
-    httpOnly: true,
-    maxAge: 24 * 60 * 60 * 1000, // 24 hours
-    sameSite: process.env.NODE_ENV === 'production' ? 'none' : 'lax'
-  }
-}));
+// ✅ REMOVED: Session middleware (no longer needed)
 
 // Logging middleware
 app.use(morgan('combined'));
@@ -80,7 +63,7 @@ import serviceRoutes from './src/routes/serviceRoutes.js';
 import bookingRoutes from './src/routes/bookingRoutes.js';
 import membershipRoutes from './src/routes/membershipRoutes.js';
 import programRoutes from './src/routes/programRoutes.js';
-import chatRoutes from './src/routes/chatRoutes.js'; // ✅ ADDED chat routes
+import chatRoutes from './src/routes/chatRoutes.js';
 
 // Apply rate limiting to API routes
 app.use('/api/', apiLimiter);
@@ -98,14 +81,14 @@ try {
 
 app.use('/api/auth', authRoutes);
 app.use('/api/members/register', registrationLimiter);
-app.use('/api/programs', programRoutes); // Public program routes
+app.use('/api/programs', programRoutes);
 app.use('/api/trainers', trainerRoutes);
 app.use('/api/services', serviceRoutes);
-app.use('/api/memberships', membershipRoutes); // Public plan viewing
-app.use('/api/chat', chatRoutes); // ✅ Chat routes are public
+app.use('/api/memberships', membershipRoutes);
+app.use('/api/chat', chatRoutes);
 
-// ==================== PROTECTED ROUTES WITH TRIAL CHECK ====================
-// These routes require authentication AND trial check for all endpoints
+// ==================== PROTECTED ROUTES WITH JWT ====================
+// These routes require JWT token in Authorization header
 
 // Member routes (all protected)
 app.use('/api/members', authMiddleware, checkTrialExpiry, memberRoutes);
@@ -114,7 +97,6 @@ app.use('/api/members', authMiddleware, checkTrialExpiry, memberRoutes);
 app.use('/api/bookings', authMiddleware, checkTrialExpiry, bookingRoutes);
 
 // Program routes that need protection (specific endpoints)
-// Note: Public GET routes are already above
 app.post('/api/programs/enroll', authMiddleware, checkTrialExpiry, (req, res, next) => {
   req.url = '/enroll';
   programRoutes(req, res, next);
@@ -139,8 +121,6 @@ app.delete('/api/programs/:id/save', authMiddleware, checkTrialExpiry, (req, res
 });
 
 // ==================== MEMBERSHIP ROUTES (Auth but NO trial check) ====================
-// These need auth but allow expired trial users to upgrade
-
 app.post('/api/memberships/purchase', authMiddleware, (req, res, next) => {
   req.url = '/purchase';
   membershipRoutes(req, res, next);
@@ -152,10 +132,9 @@ app.get('/api/memberships/my-membership', authMiddleware, (req, res, next) => {
 });
 
 // ==================== ADMIN ROUTES ====================
-// Uncomment if you have admin routes
 // app.use('/api/admin', authMiddleware, adminMiddleware, adminRoutes);
 
-// Health check endpoint
+// ✅ UPDATED: Health check endpoint (no session info)
 app.get('/api/health', (req, res) => {
   res.status(200).json({
     success: true,
@@ -163,19 +142,16 @@ app.get('/api/health', (req, res) => {
     timestamp: new Date().toISOString(),
     service: 'Gym Management API',
     environment: process.env.NODE_ENV,
-    version: '1.0.0',
-    session: req.sessionID ? 'Session enabled' : 'No session'
+    version: '1.0.0'
   });
 });
 
-// Session test endpoint (for debugging)
-app.get('/api/session-test', (req, res) => {
+// ✅ NEW: Token verification endpoint
+app.get('/api/verify-token', authMiddleware, (req, res) => {
   res.status(200).json({
     success: true,
-    sessionId: req.sessionID,
-    sessionData: req.session,
-    authenticated: req.session.isAuthenticated || false,
-    user: req.session.user || null
+    message: 'Token is valid',
+    user: req.user
   });
 });
 
@@ -189,24 +165,17 @@ const PORT = process.env.PORT || 5000;
 app.listen(PORT, () => {
   console.log(`✅ Server running on http://localhost:${PORT}`);
   console.log(`📝 Environment: ${process.env.NODE_ENV || 'development'}`);
-  console.log(`🌐 CORS enabled for: ${process.env.APP_URL || 'http://localhost:3000, http://localhost:5173'}`);
-  console.log(`🔐 Session storage: PostgreSQL`);
+  console.log(`🌐 CORS enabled for: ${process.env.APP_URL || 'http://localhost:5173, https://gym-application-sooty.vercel.app'}`);
+  console.log(`🔐 JWT Authentication enabled`);
   console.log(`💬 Chat service enabled with Redis`);
 });
 
-
-// Add this temporarily to test Redis
+// Redis test endpoint (keep for debugging)
 app.get('/api/test-redis', async (req, res) => {
   try {
     const redis = redisClient.getClient();
-    
-    // Test write
     await redis.set('test-key', 'PowerGym Redis is working!');
-    
-    // Test read
     const value = await redis.get('test-key');
-    
-    // Test expiry
     await redis.expire('test-key', 60);
     
     res.json({
