@@ -8,6 +8,7 @@ import { fileURLToPath } from 'url';
 import session from 'express-session';
 import pgSession from 'connect-pg-simple';
 import pool from './src/database/db.js';
+import redisClient from './src/config/redis.js'; // ✅ ADDED Redis client
 
 dotenv.config();
 
@@ -69,7 +70,6 @@ app.use(express.urlencoded({ extended: true, limit: '10mb' }));
 const { globalErrorHandler, notFound } = await import('./src/middleware/errorHandler.js');
 const { apiLimiter, registrationLimiter, loginLimiter } = await import('./src/middleware/rateLimiter.js');
 const { authMiddleware, adminMiddleware } = await import('./src/middleware/auth.js');
-// ✅ Import trial middleware (make sure this file exists)
 const { checkTrialExpiry } = await import('./src/middleware/trialMiddleware.js');
 
 // Import routes
@@ -80,9 +80,18 @@ import serviceRoutes from './src/routes/serviceRoutes.js';
 import bookingRoutes from './src/routes/bookingRoutes.js';
 import membershipRoutes from './src/routes/membershipRoutes.js';
 import programRoutes from './src/routes/programRoutes.js';
+import chatRoutes from './src/routes/chatRoutes.js'; // ✅ ADDED chat routes
 
 // Apply rate limiting to API routes
 app.use('/api/', apiLimiter);
+
+// ==================== CONNECT TO REDIS ====================
+try {
+  await redisClient.connect();
+  console.log('✅ Redis connected successfully');
+} catch (error) {
+  console.error('❌ Redis connection failed:', error);
+}
 
 // ==================== PUBLIC ROUTES ====================
 // These routes have NO authentication middleware applied
@@ -93,6 +102,7 @@ app.use('/api/programs', programRoutes); // Public program routes
 app.use('/api/trainers', trainerRoutes);
 app.use('/api/services', serviceRoutes);
 app.use('/api/memberships', membershipRoutes); // Public plan viewing
+app.use('/api/chat', chatRoutes); // ✅ Chat routes are public
 
 // ==================== PROTECTED ROUTES WITH TRIAL CHECK ====================
 // These routes require authentication AND trial check for all endpoints
@@ -106,7 +116,6 @@ app.use('/api/bookings', authMiddleware, checkTrialExpiry, bookingRoutes);
 // Program routes that need protection (specific endpoints)
 // Note: Public GET routes are already above
 app.post('/api/programs/enroll', authMiddleware, checkTrialExpiry, (req, res, next) => {
-  // This will be handled by programRoutes
   req.url = '/enroll';
   programRoutes(req, res, next);
 });
@@ -122,7 +131,6 @@ app.get('/api/programs/my/saved', authMiddleware, checkTrialExpiry, (req, res, n
 });
 
 app.post('/api/programs/:id/save', authMiddleware, checkTrialExpiry, (req, res, next) => {
-  // Forward to programRoutes with original URL
   programRoutes(req, res, next);
 });
 
@@ -183,4 +191,39 @@ app.listen(PORT, () => {
   console.log(`📝 Environment: ${process.env.NODE_ENV || 'development'}`);
   console.log(`🌐 CORS enabled for: ${process.env.APP_URL || 'http://localhost:3000, http://localhost:5173'}`);
   console.log(`🔐 Session storage: PostgreSQL`);
+  console.log(`💬 Chat service enabled with Redis`);
+});
+
+
+// Add this temporarily to test Redis
+app.get('/api/test-redis', async (req, res) => {
+  try {
+    const redis = redisClient.getClient();
+    
+    // Test write
+    await redis.set('test-key', 'PowerGym Redis is working!');
+    
+    // Test read
+    const value = await redis.get('test-key');
+    
+    // Test expiry
+    await redis.expire('test-key', 60);
+    
+    res.json({
+      success: true,
+      message: 'Redis connection successful!',
+      data: {
+        value,
+        connection: 'Upstash',
+        status: redisClient.isConnected() ? 'connected' : 'disconnected'
+      }
+    });
+  } catch (error) {
+    console.error('Redis test error:', error);
+    res.status(500).json({
+      success: false,
+      message: 'Redis connection failed',
+      error: error.message
+    });
+  }
 });

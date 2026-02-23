@@ -1,0 +1,35 @@
+version: '3.8'
+
+services:
+  redis:
+    image: redis:7-alpine
+    container_name: powergym-redis
+    ports:
+      - "6379:6379"
+    volumes:
+      - redis-data:/data
+    command: redis-server --appendonly yes
+    restart: unless-stopped
+    networks:
+      - powergym-network
+
+  rasa:
+    image: rasa/rasa:3.6.1
+    container_name: powergym-rasa
+    ports:
+      - "5005:5005"
+    volumes:
+      - ./rasa:/app
+    command: run --enable-api --cors "*" --debug
+    restart: unless-stopped
+    depends_on:
+      - redis
+    networks:
+      - powergym-network
+
+volumes:
+  redis-data:
+
+networks:
+  powergym-network:
+    driver: bridge

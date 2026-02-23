@@ -1,0 +1,171 @@
+version: "3.1"
+
+intents:
+  - greet
+  - goodbye
+  - ask_membership_plans
+  - ask_payment_issues
+  - ask_payment_methods
+  - ask_refund
+  - ask_technical_support
+  - ask_escalate_to_admin
+  - report_issue
+  - ask_classes
+  - ask_trainers
+  - ask_price
+  - ask_location
+  - ask_hours
+  - ask_contact
+  - ask_facilities
+  - ask_trial
+  - ask_bookings
+  - ask_diet_nutrition
+  - complain_feedback
+  - affirm
+  - deny
+  - thanks
+  - bot_challenge
+  - provide_payment_details
+
+entities:
+  - transaction_id
+  - amount
+  - date
+
+slots:
+  transaction_id:
+    type: text
+    influence_conversation: true
+    mappings:
+    - type: from_entity
+      entity: transaction_id
+  issue_escalated:
+    type: bool
+    influence_conversation: true
+    mappings:
+    - type: custom
+
+responses:
+  utter_greet:
+    - text: "Hey there! 👋 Welcome to PowerGym. How can I help you today?"
+    - text: "Hello! Thanks for reaching out to PowerGym. What can I do for you?"
+    - text: "Hi! Welcome to PowerGym support. How may I assist you?"
+
+  utter_goodbye:
+    - text: "Thanks for chatting! Have a great workout 💪"
+    - text: "Goodbye! Feel free to reach out anytime"
+    - text: "Take care! See you at the gym"
+
+  utter_ask_membership_plans:
+    - text: "We have 3 great membership plans:\n\n💪 **Basic** - Ksh 3,000/month\n- Full gym access\n- Locker room access\n- 1 free guest pass/month\n\n🔥 **Pro** - Ksh 5,000/month\n- Everything in Basic\n- Unlimited group classes\n- 1 personal training session/month\n\n👑 **Premium** - Ksh 8,000/month\n- Everything in Pro\n- 4 personal training sessions/month\n- Nutrition consultation\n- Towel service\n\nAll memberships include 24/7 access! Would you like to know more about any specific plan?"
+    - text: "Here are our membership options:\n\n• Basic: Ksh 3,000/mo - Gym access + locker\n• Pro: Ksh 5,000/mo - Adds classes + 1 PT session\n• Premium: Ksh 8,000/mo - Adds 4 PT sessions + nutrition\n\nWhich one interests you?"
+
+  utter_ask_payment_issues:
+    - text: "I'm sorry to hear you're having payment issues. 😟 Let me help you resolve this.\n\nPlease provide your:\n1️⃣ Transaction ID or M-Pesa code\n2️⃣ Date of payment\n3️⃣ Amount paid\n4️⃣ Payment method used\n\nI'll check this immediately and notify our team if needed."
+    - text: "Payment issues can be frustrating! I'll help you sort this out.\n\nCould you share your transaction reference number? This helps me track the payment quickly."
+
+  utter_ask_payment_methods:
+    - text: "We accept multiple payment methods:\n\n💳 **Credit/Debit Cards** - Visa, Mastercard\n📱 **M-Pesa** - Paybill: 123456, Account: Your Member ID\n🏦 **Bank Transfer** - Equity Bank, Acc: 1234567890\n🔄 **Auto-Pay** - Set up recurring payments\n\nWould you like help setting up any of these?"
+    - text: "Payment options:\n• M-Pesa Paybill: 123456\n• Credit cards online\n• Bank transfer\n• Auto-pay for monthly memberships\n\nWhich method would you prefer?"
+
+  utter_ask_refund:
+    - text: "💰 **Refund Policy:**\n\n• Refunds processed within 5-7 business days\n• Cancellations before 1st of month get full refund\n• Cancellations after 1st get pro-rated refund\n• Annual memberships: Pro-rated refund minus 10% fee\n\nTo request a refund, please provide your membership number and reason. I'll notify our finance team."
+    - text: "Refunds typically take 3-5 business days to reflect in your account. Would you like me to notify our team to start the refund process for you?"
+
+  utter_ask_technical_support:
+    - text: "🛠️ **Technical Support**\n\nFor app issues:\n1️⃣ Try logging out and back in\n2️⃣ Clear app cache\n3️⃣ Update to latest version\n4️⃣ Check your internet connection\n\nIf issues persist, please tell me more and I'll notify our tech team."
+    - text: "Having technical difficulties? Let me help:\n\n• Login issues? Reset password [here]\n• App crashing? Send us your device model\n• Website down? We'll check immediately\n\nWhat specific issue are you facing?"
+
+  utter_ask_escalate_to_admin:
+    - text: "I understand this needs human attention. I'll **immediately notify** our support team. 🚨\n\nSomeone will contact you within **30 minutes** via:\n- Email (if you're logged in)\n- Phone (if provided)\n- WhatsApp\n\nIs there anything else I can help with while you wait?"
+    - text: "I'm alerting a human agent right now. Someone will reach out to you shortly. Please check your email/SMS for updates. Your issue is important to us!"
+
+  utter_ask_escalate_confirmation:
+    - text: "Would you like me to notify our support team about this?"
+    - text: "This seems like something a human should handle. Shall I alert our team?"
+
+  utter_ask_escalate_received:
+    - text: "Thank you. I've notified our support team. They'll contact you soon. For urgent matters, call us directly at +254 712 345 678."
+    - text: "Our team has been notified. You'll hear from them shortly."
+
+  utter_report_issue_received:
+    - text: "Thank you for reporting this. 🛠️ I've notified our facilities team. They'll address it within 24 hours."
+    - text: "Issue reported successfully! Our maintenance team has been alerted and will take care of it."
+
+  utter_ask_collect_payment_details:
+    - text: "To help with your payment issue, I need a few details:\n\n📝 **Transaction ID** (M-Pesa code/Reference)\n📅 **Date of payment**\n💰 **Amount**\n💳 **Payment method**\n\nYou can provide them here, and I'll investigate immediately."
+    - text: "Please share your transaction details and I'll look into this right away. The more information you provide, the faster we can resolve it."
+
+  utter_ask_payment_investigating:
+    - text: "Thank you for the details. I'm investigating your payment now. 🔍 This usually takes 2-3 minutes. I'll update you shortly."
+    - text: "Checking your payment status... One moment please."
+
+  utter_payment_resolved:
+    - text: "Good news! ✅ I've confirmed your payment was successful. It should reflect in your account within the next hour. Thank you for your patience!"
+    - text: "Your payment has been verified! Your membership is now active. Sorry for the inconvenience. Is there anything else I can help with?"
+
+  utter_payment_unresolved:
+    - text: "I've checked and there seems to be a discrepancy with your payment. I'm notifying our finance team to investigate. They'll contact you within 24 hours."
+    - text: "Our system shows a mismatch. I'm alerting our billing department. They'll reach out to you within 24 hours."
+
+  utter_ask_classes:
+    - text: "We offer a wide variety of classes! 🧘‍♂️\n\n• Yoga & Pilates\n• HIIT & Cardio Blast\n• Spin Cycling\n• Strength Training\n• Zumba & Dance\n• Boxing & Kickboxing\n• Stretch & Mobility\n\nClasses run daily from 6am to 8pm. Check our schedule page for exact timings!"
+    - text: "Our class schedule:\n\nMorning: 6am-9am (HIIT, Yoga, Spin)\nMid-day: 12pm-2pm (Express classes)\nEvening: 5pm-8pm (Strength, Zumba, Boxing)\n\nYou can book classes through our app or at the front desk!"
+
+  utter_ask_trainers:
+    - text: "Our certified trainers are ready to help you! 💪\n\n• **John** - Strength & Conditioning\n• **Sarah** - Yoga & Pilates\n• **Mike** - HIIT & Boxing\n• **Emma** - Nutrition & Weight Loss\n• **David** - Bodybuilding & Powerlifting\n\nPersonal training sessions: Ksh 2,500/session or package deals available. Book a free consultation!"
+    - text: "We have 10+ certified personal trainers with specialties in:\n- Weight loss\n- Muscle building\n- Athletic performance\n- Rehabilitation\n- Nutrition coaching\n\nFirst consultation is FREE! Would you like to schedule one?"
+
+  utter_ask_price:
+    - text: "💰 **Membership Prices:**\n\nBasic: Ksh 3,000/month\nPro: Ksh 5,000/month\nPremium: Ksh 8,000/month\n\n**Yearly plans** save you 2 months!\nBasic Yearly: Ksh 30,000\nPro Yearly: Ksh 50,000\nPremium Yearly: Ksh 80,000\n\nNo initiation fee! First month is pro-rated."
+    - text: "Our pricing is simple and transparent:\n\nMonthly: Ksh 3,000 - 8,000 depending on plan\nYearly: Get 2 months FREE\nDay Pass: Ksh 500\n\nWe also offer student discounts (15% off) and corporate packages!"
+
+  utter_ask_location:
+    - text: "📍 **PowerGym Location:**\n123 Fitness Street\nWorkout City, WC 12345\n\n**Landmark:** Next to the Mall, behind the stadium.\n\n🅿️ Free parking available!\n🚌 Bus stop: 2 min walk"
+    - text: "We're located at:\n123 Fitness Street, Workout City\n\nEasy to find with Google Maps! Search 'PowerGym' and you'll see us. Free parking for members."
+
+  utter_ask_hours:
+    - text: "🕒 **PowerGym Hours:**\nMonday-Friday: 6:00 AM - 10:00 PM\nSaturday: 8:00 AM - 8:00 PM\nSunday: 8:00 AM - 6:00 PM\n\n**24/7 access** for members with key fob!"
+    - text: "We're open 7 days a week!\nWeekdays: 6am-10pm\nWeekends: 8am-8pm\n\nMembers enjoy 24/7 access with their key fob after hours."
+
+  utter_ask_contact:
+    - text: "📞 **Contact Us:**\nPhone: +254 712 345 678\nWhatsApp: +254 712 345 678\nEmail: support@powergym.com\n\nOr visit us at the front desk! We're here 24/7 for members."
+    - text: "Get in touch:\n📱 WhatsApp: +254 712 345 678\n📧 Email: support@powergym.com\n☎️ Phone: +254 712 345 678\n\nResponse time: Usually within 2 hours"
+
+  utter_ask_facilities:
+    - text: "🏋️ **Our Facilities:**\n\n• State-of-the-art cardio equipment (treadmills, bikes, ellipticals)\n• Full free weights area\n• Smith machines & cable stations\n• Functional training zone\n• Yoga/Pilates studio\n• Spin studio\n• Locker rooms with showers\n• Sauna (Premium members)\n• Smoothie bar\n• Free WiFi\n• Member lounge"
+    - text: "We've got everything you need:\n✅ 50+ cardio machines\n✅ Full powerlifting setup\n✅ Functional training equipment\n✅ Group class studios\n✅ Locker rooms with towel service\n✅ Nutrition bar\n✅ Recovery zone with foam rollers"
+
+  utter_ask_trial:
+    - text: "Yes! We offer a **FREE 7-day trial** for new members. 🎉\n\nYou get full access to:\n- Gym equipment\n- Group classes\n- Locker rooms\n\nNo commitment, cancel anytime! Would you like to start your trial?"
+    - text: "Absolutely! Try PowerGym FREE for 7 days. All facilities included. Just click 'Start Free Trial' on our website or visit us. Ready to begin?"
+
+  utter_ask_bookings:
+    - text: "📱 **Booking is easy!**\n\n1. Download our app (iOS/Android)\n2. Log in with your membership\n3. Browse classes and trainers\n4. Book and pay online\n\nYou can also book at the front desk or call us!"
+    - text: "To book classes or personal training:\n• Use our mobile app\n• Visit our website\n• Call the front desk\n\nCancel 24h in advance for free. Late cancellations may incur a small fee."
+
+  utter_ask_diet_nutrition:
+    - text: "🥗 **Nutrition Services**\n\nWe have certified nutritionists who can help with:\n- Weight loss meal plans\n- Muscle building diets\n- Healthy eating habits\n- Supplement guidance\n\nFirst consultation FREE with Premium membership. Ksh 2,000 for Basic/Pro members."
+    - text: "Our nutrition experts create personalized meal plans based on your goals. Book a session today! Starting at Ksh 2,000/consultation."
+
+  utter_complain_feedback:
+    - text: "We're sorry to hear that! 😔 Please tell us more so we can make it right. You can also email our manager directly at manager@powergym.com or call +254 712 345 678. Your feedback helps us improve!"
+    - text: "We value your feedback! Please share details and we'll address it immediately. For urgent issues, please speak to the front desk manager."
+
+  utter_thanks:
+    - text: "You're welcome! 😊 Let me know if you need anything else."
+    - text: "Happy to help! Enjoy your workouts 💪"
+    - text: "Anytime! That's what I'm here for."
+
+  utter_iamabot:
+    - text: "I'm PowerGym's AI assistant! I can answer questions about memberships, classes, trainers, and more. For complex issues, I can notify our human support team."
+    - text: "I'm a bot designed to help with all your PowerGym questions. If you need human assistance, just ask and I'll alert our team!"
+
+  utter_default:
+    - text: "I'm not sure I understand. Could you rephrase that? You can ask me about memberships, classes, trainers, prices, hours, or location."
+    - text: "I'm still learning! Try asking about:\n• Membership plans\n• Class schedules\n• Trainer info\n• Prices\n• Location & hours\n• Payment issues"
+    - text: "Hmm, I didn't catch that. Here's what I can help with:\n- Membership options\n- Class information\n- Payment issues\n- Technical support\n- Reporting problems"
+
+session_config:
+  session_expiration_time: 60
+  carry_over_slots_to_new_session: true

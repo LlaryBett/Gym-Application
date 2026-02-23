@@ -1,0 +1,356 @@
+version: "3.1"
+
+nlu:
+- intent: greet
+  examples: |
+    - hey
+    - hello
+    - hi
+    - good morning
+    - good afternoon
+    - good evening
+    - hey there
+    - what's up
+    - yo
+    - hola
+
+- intent: goodbye
+  examples: |
+    - bye
+    - goodbye
+    - see you later
+    - talk to you soon
+    - have a great day
+    - take care
+    - cya
+    - later
+
+- intent: ask_membership_plans
+  examples: |
+    - what membership plans do you have?
+    - tell me about memberships
+    - membership options
+    - how much is membership?
+    - what are the plans?
+    - gym membership prices
+    - monthly membership cost
+    - yearly membership options
+    - do you have student discounts?
+    - family membership plans
+    - couples membership
+    - what's included in membership
+    - membership benefits
+    - can I freeze my membership?
+    - membership cancellation policy
+
+- intent: ask_payment_issues
+  examples: |
+    - I made a payment but it's not reflecting
+    - payment failed but money was deducted
+    - double charged my card
+    - payment not showing in my account
+    - my membership shows unpaid but I paid
+    - transaction issue
+    - billing problem
+    - my card was charged twice
+    - payment pending for 3 days
+    - refund not received
+    - incorrect amount charged
+    - payment method not working
+    - can't update payment method
+    - auto-pay not working
+    - payment declined but bank says approved
+    - receipt not received
+    - invoice missing
+
+- intent: ask_payment_methods
+  examples: |
+    - what payment methods do you accept?
+    - can I pay with M-Pesa?
+    - do you accept credit cards?
+    - payment options
+    - how to pay membership
+    - online payment
+    - bank transfer details
+    - do you have installment plans?
+    - can I pay monthly?
+    - automatic payment setup
+    - how to set up auto-pay
+    - payment portal link
+    - pay with PayPal?
+
+- intent: ask_refund
+  examples: |
+    - how do I get a refund?
+    - refund policy
+    - can I get my money back?
+    - cancel and refund
+    - refund for overcharge
+    - money back guarantee
+    - refund process
+    - how long do refunds take?
+    - refund not processed
+    - dispute charge
+
+- intent: ask_technical_support
+  examples: |
+    - app not working
+    - can't log in to member portal
+    - website down
+    - booking system error
+    - app crashing
+    - forgot password
+    - can't access my account
+    - member login issue
+    - QR code not scanning
+    - check-in machine not working
+    - equipment not working
+    - broken treadmill
+    - machine out of order
+
+- intent: ask_escalate_to_admin
+  examples: |
+    - I need to speak to a manager
+    - connect me to admin
+    - talk to human support
+    - this is urgent
+    - need immediate help
+    - supervisor please
+    - escalate my issue
+    - customer service agent
+    - real person please
+    - not satisfied with bot
+    - human assistance needed
+    - admin support required
+
+- intent: report_issue
+  examples: |
+    - I want to report a problem
+    - something is broken
+    - issue at the gym
+    - complaint about trainer
+    - dirty locker room
+    - no hot water
+    - AC not working
+    - equipment broken
+    - staff was rude
+    - overcrowded gym
+    - music too loud
+    - safety concern
+    - injured during workout
+    - lost item in locker room
+
+- intent: ask_classes
+  examples: |
+    - what classes do you offer?
+    - tell me about classes
+    - class schedule
+    - fitness classes
+    - group classes
+    - yoga classes
+    - pilates classes
+    - spin classes
+    - HIIT classes
+    - strength training classes
+    - when is yoga class?
+    - are there morning classes?
+    - evening classes schedule
+    - weekend classes
+    - do you have Zumba?
+    - what time is boxing class?
+    - how to book a class
+
+- intent: ask_trainers
+  examples: |
+    - who are the trainers?
+    - tell me about trainers
+    - personal trainers
+    - do you have trainers?
+    - trainer qualifications
+    - how to book a trainer
+    - personal training cost
+    - trainer availability
+    - can I get a free consultation?
+    - trainer specialties
+    - female trainers available?
+    - nutritionist services
+
+- intent: ask_price
+  examples: |
+    - how much does it cost?
+    - what are the prices?
+    - pricing information
+    - monthly fee
+    - yearly fee
+    - cost of membership
+    - is there an initiation fee?
+    - any hidden costs?
+    - payment plans
+    - do you accept insurance?
+    - corporate discounts
+    - military discount
+
+- intent: ask_location
+  examples: |
+    - where are you located?
+    - gym address
+    - location
+    - what's your address?
+    - how to find you
+    - directions to the gym
+    - is there parking?
+    - nearest public transport
+    - what area are you in?
+    - map location
+
+- intent: ask_hours
+  examples: |
+    - what are your hours?
+    - opening hours
+    - when are you open?
+    - operating hours
+    - are you open now?
+    - weekend hours
+    - holiday hours
+    - what time do you close?
+    - what time do you open?
+    - early morning hours
+    - late night hours
+    - 24 hour gym?
+
+- intent: ask_contact
+  examples: |
+    - how to contact you?
+    - phone number
+    - email address
+    - contact information
+    - customer service
+    - support email
+    - can I speak to someone?
+    - manager contact
+    - complaint number
+    - WhatsApp number
+
+- intent: ask_facilities
+  examples: |
+    - what equipment do you have?
+    - gym facilities
+    - do you have a pool?
+    - sauna available?
+    - locker rooms
+    - showers
+    - towel service
+    - parking facilities
+    - wifi available?
+    - smoothie bar
+    - child care services
+    - personal training studio
+    - cardio equipment
+    - weightlifting area
+    - functional training zone
+
+- intent: ask_trial
+  examples: |
+    - do you have free trial?
+    - can I try before joining?
+    - trial membership
+    - guest pass
+    - free day pass
+    - trial period
+    - can I visit first?
+    - trial class
+    - free workout
+
+- intent: ask_bookings
+  examples: |
+    - how to book a class?
+    - book a session
+    - reserve a spot
+    - appointment booking
+    - schedule a workout
+    - can I book online?
+    - booking app
+    - cancel booking
+    - reschedule class
+    - booking policy
+
+- intent: ask_diet_nutrition
+  examples: |
+    - do you have nutritionist?
+    - diet plans
+    - meal planning
+    - nutrition advice
+    - healthy eating tips
+    - protein supplements
+    - diet consultation
+    - weight loss help
+    - bodybuilding diet
+
+- intent: complain_feedback
+  examples: |
+    - I want to complain
+    - not happy with service
+    - feedback about gym
+    - issue with billing
+    - problem with trainer
+    - dirty equipment
+    - overcrowded
+    - music too loud
+    - broken machine
+    - suggestion for improvement
+
+- intent: affirm
+  examples: |
+    - yes
+    - yeah
+    - correct
+    - that's right
+    - okay
+    - sure
+    - sounds good
+    - I'd like that
+    - please do
+    - yes please
+    - go ahead
+
+- intent: deny
+  examples: |
+    - no
+    - nope
+    - not interested
+    - no thanks
+    - maybe later
+    - not right now
+    - I'll pass
+    - no thank you
+
+- intent: thanks
+  examples: |
+    - thank you
+    - thanks
+    - appreciate it
+    - helpful
+    - thanks a lot
+    - thanks for your help
+    - great, thanks
+    - much appreciated
+
+- intent: bot_challenge
+  examples: |
+    - are you a bot?
+    - am I talking to a bot?
+    - are you a human?
+    - is this automated?
+    - who am I talking to?
+
+- intent: provide_payment_details
+  examples: |
+    - here is my transaction ID
+    - transaction reference
+    - my payment ID is
+    - receipt number
+    - here's my bank statement
+    - payment confirmation
+    - M-Pesa code
+    - transaction code
+    - my reference number

@@ -192,6 +192,49 @@ export const programAPI = {
         del(`/programs/${programId}/upgrades/${upgradeProgramId}`)
 };
 
+// 
+
+
+
+// ==================== CHAT ====================
+export const chatAPI = {
+  /**
+   * Send a message to the chatbot
+   * @param {string} message - The user's message
+   * @param {string} sessionId - Optional session ID for conversation continuity
+   * @param {string} userName - Optional user name for personalization
+   * @returns {Promise} - Chat response with bot messages
+   */
+  sendMessage: (message, sessionId = null, userName = 'User') => {
+    const payload = { message, userName };
+    if (sessionId) {
+      payload.sessionId = sessionId;
+    }
+    return post('/chat/message', payload);
+  },
+
+  /**
+   * Get conversation history for a session
+   * @param {string} sessionId - The session ID
+   * @returns {Promise} - Array of conversation messages
+   */
+  getHistory: (sessionId) => get(`/chat/history/${sessionId}`),
+
+  /**
+   * Clear a chat session
+   * @param {string} sessionId - The session ID to clear
+   * @returns {Promise} - Success confirmation
+   */
+  clearSession: (sessionId) => del(`/chat/session/${sessionId}`),
+
+  /**
+   * Track active session with user data
+   * @param {string} sessionId - The session ID
+   * @param {Object} userData - User information (name, email, etc.)
+   * @returns {Promise} - Success confirmation
+   */
+  trackSession: (sessionId, userData) => post('/chat/track', { sessionId, userData })
+};
 // ==================== BOOKINGS ====================
 export const bookingAPI = {
   // ===== MAIN BOOKING OPERATIONS =====
@@ -477,6 +520,7 @@ export default {
   bookingAPI,
   feedbackAPI,
   membershipAPI,
+  chatAPI,
   
   // Utility
   healthCheck,
