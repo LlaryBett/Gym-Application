@@ -153,9 +153,9 @@ export const membershipService = {
   // ===== MEMBER METHODS =====
   
   /**
-   * Purchase a membership
+   * Purchase a membership (UPDATED for Paystack)
    * @param {Object} data - { plan_id, billing_cycle, auto_renew }
-   * @returns {Promise} - Purchase confirmation
+   * @returns {Promise} - Returns Paystack authorization URL
    */
   purchaseMembership: async (data) => {
     try {
@@ -167,6 +167,12 @@ export const membershipService = {
       };
       
       const response = await membershipAPI.purchase(payload);
+      
+      // Paystack response contains authorization_url to redirect to
+      if (response.success && response.data?.authorization_url) {
+        return response;
+      }
+      
       return response;
     } catch (error) {
       console.error('Failed to purchase membership:', error);
@@ -442,7 +448,7 @@ export const membershipService = {
     
     const daysRemaining = Math.ceil((endDate - today) / (1000 * 60 * 60 * 24));
     
-    // ✅ Check if this is a trial membership
+    // Check if this is a trial membership
     const isTrial = membership.plan_name === '7-Day Free Trial' || 
                     membership.billing_cycle === 'trial' ||
                     membership.isTrial === true;
@@ -466,7 +472,7 @@ export const membershipService = {
       formatted_start: membershipService.formatDate(membership.start_date),
       formatted_end: membershipService.formatDate(membership.end_date),
       
-      // ✅ NEW: Trial-specific fields
+      // Trial-specific fields
       isTrial,
       trial_ends: isTrial ? membership.end_date : null,
       trial_expired: isTrial ? isExpired : false,

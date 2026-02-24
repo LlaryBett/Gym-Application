@@ -14,7 +14,7 @@ import Trainers from './pages/Trainers'
 import ProgramsEvents from './pages/ProgramsEvents'
 import MemberRegistration from './components/MemberRegistration'
 import ProgramDetail from './pages/ProgramDetail'
-import AuthProvider from './context/authContext' // ✅ FIXED: Correct path (no .jsx needed)
+import AuthProvider from './context/authContext'
 import ThankYou from './components/ThankYou'
 import Login from './components/Login'
 import BookService from './pages/BookService'
@@ -22,12 +22,13 @@ import Dashboard from './pages/Dashboard'
 import Profile from './pages/Profile'
 import ForgotMembership from './pages/ForgotMembership'
 import AboutUs from './pages/Aboutus'
+import PaymentSuccess from './pages/PaymentSuccess'
+import PaymentFailed from './pages/PaymentFailed'
 
 function App() {
   return (
     <div className="App pt-16 md:pt-20">
-      <AuthProvider> {/* ✅ This is now correct */}
-
+      <AuthProvider>
         <Toaster
           position="top-right"
           reverseOrder={false}
@@ -53,6 +54,8 @@ function App() {
             <Route path="/services" element={<Services />} />
             <Route path="/recovery" element={<Recovery />} />
             <Route path="/membership" element={<Membership />} />
+            <Route path="/membership/success" element={<PaymentSuccess />} />
+            <Route path="/membership/failed" element={<PaymentFailed />} />
             <Route path="/programs-events" element={<ProgramsEvents />} />
             <Route path="/programs/:id" element={<ProgramDetail />} />
             <Route path="/register" element={<MemberRegistration />} />

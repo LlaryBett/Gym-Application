@@ -264,6 +264,47 @@ export const feedbackAPI = {
   getTrainerRating: (trainerId) => get(`/booking-feedback/trainer/${trainerId}/rating`),
 };
 
+// ==================== CARDS ====================
+export const cardAPI = {
+  /**
+   * Get user's membership card (masked)
+   * @returns {Promise} - Card details with masked number
+   */
+  getMyCard: () => get('/cards/my-card'),
+  
+  /**
+   * Get full card details (unmasked)
+   * @returns {Promise} - Complete card details
+   */
+  getFullCardDetails: () => get('/cards/full-details'),
+  
+  /**
+   * Issue a new membership card
+   * @returns {Promise} - Newly issued card
+   */
+  issueCard: () => post('/cards/issue'),
+  
+  /**
+   * Format card number with spaces
+   * @param {string} cardNumber - Raw card number
+   * @returns {string} - Formatted card number
+   */
+  formatCardNumber: (cardNumber) => {
+    if (!cardNumber) return '';
+    return cardNumber.replace(/(\d{4})/g, '$1 ').trim();
+  },
+  
+  /**
+   * Mask card number (show only last 4)
+   * @param {string} cardNumber - Raw card number
+   * @returns {string} - Masked card number
+   */
+  maskCardNumber: (cardNumber) => {
+    if (!cardNumber) return '';
+    return '•••• •••• •••• ' + cardNumber.slice(-4);
+  }
+};
+
 // ==================== MEMBERSHIPS ====================
 export const membershipAPI = {
   getAllPlans: () => get('/memberships/plans'),
@@ -305,6 +346,7 @@ export default {
   bookingAPI,
   feedbackAPI,
   membershipAPI,
+  cardAPI,        // ✅ NEW: Card API
   chatAPI,
   healthCheck,
 };

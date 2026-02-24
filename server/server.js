@@ -28,7 +28,7 @@ app.use(helmet({
   crossOriginEmbedderPolicy: false
 }));
 
-// ✅ UPDATED: CORS configuration (no credentials needed with JWT)
+// CORS configuration
 app.use(cors({
   origin: [
     process.env.APP_URL || 'http://localhost:5173',
@@ -40,12 +40,12 @@ app.use(cors({
   allowedHeaders: ['Content-Type', 'Authorization', 'X-Requested-With']
 }));
 
-// ✅ REMOVED: Session middleware (no longer needed)
-
 // Logging middleware
 app.use(morgan('combined'));
 
-// Body parsing middleware
+// Body parsing middleware - IMPORTANT: Raw body for webhooks BEFORE JSON parsing
+app.use('/api/memberships/webhook', express.raw({type: 'application/json'}));
+
 app.use(express.json({ limit: '10mb' }));
 app.use(express.urlencoded({ extended: true, limit: '10mb' }));
 
@@ -64,6 +64,7 @@ import bookingRoutes from './src/routes/bookingRoutes.js';
 import membershipRoutes from './src/routes/membershipRoutes.js';
 import programRoutes from './src/routes/programRoutes.js';
 import chatRoutes from './src/routes/chatRoutes.js';
+import cardRoutes from './src/routes/cardRoutes.js'; // ✅ NEW: Card routes
 
 // Apply rate limiting to API routes
 app.use('/api/', apiLimiter);
@@ -77,8 +78,6 @@ try {
 }
 
 // ==================== PUBLIC ROUTES ====================
-// These routes have NO authentication middleware applied
-
 app.use('/api/auth', authRoutes);
 app.use('/api/members/register', registrationLimiter);
 app.use('/api/programs', programRoutes);
@@ -88,15 +87,11 @@ app.use('/api/memberships', membershipRoutes);
 app.use('/api/chat', chatRoutes);
 
 // ==================== PROTECTED ROUTES WITH JWT ====================
-// These routes require JWT token in Authorization header
-
-// Member routes (all protected)
 app.use('/api/members', authMiddleware, checkTrialExpiry, memberRoutes);
-
-// Booking routes (all protected)
 app.use('/api/bookings', authMiddleware, checkTrialExpiry, bookingRoutes);
+app.use('/api/cards', authMiddleware, cardRoutes); // ✅ NEW: Card routes (protected)
 
-// Program routes that need protection (specific endpoints)
+// Program routes that need protection
 app.post('/api/programs/enroll', authMiddleware, checkTrialExpiry, (req, res, next) => {
   req.url = '/enroll';
   programRoutes(req, res, next);
@@ -120,7 +115,7 @@ app.delete('/api/programs/:id/save', authMiddleware, checkTrialExpiry, (req, res
   programRoutes(req, res, next);
 });
 
-// ==================== MEMBERSHIP ROUTES (Auth but NO trial check) ====================
+// ==================== MEMBERSHIP ROUTES ====================
 app.post('/api/memberships/purchase', authMiddleware, (req, res, next) => {
   req.url = '/purchase';
   membershipRoutes(req, res, next);
@@ -131,10 +126,7 @@ app.get('/api/memberships/my-membership', authMiddleware, (req, res, next) => {
   membershipRoutes(req, res, next);
 });
 
-// ==================== ADMIN ROUTES ====================
-// app.use('/api/admin', authMiddleware, adminMiddleware, adminRoutes);
-
-// ✅ UPDATED: Health check endpoint (no session info)
+// Health check
 app.get('/api/health', (req, res) => {
   res.status(200).json({
     success: true,
@@ -146,7 +138,7 @@ app.get('/api/health', (req, res) => {
   });
 });
 
-// ✅ NEW: Token verification endpoint
+// Token verification
 app.get('/api/verify-token', authMiddleware, (req, res) => {
   res.status(200).json({
     success: true,
@@ -168,9 +160,10 @@ app.listen(PORT, () => {
   console.log(`🌐 CORS enabled for: ${process.env.APP_URL || 'http://localhost:5173, https://gym-application-sooty.vercel.app'}`);
   console.log(`🔐 JWT Authentication enabled`);
   console.log(`💬 Chat service enabled with Redis`);
+  console.log(`💳 Card service enabled`); // ✅ NEW: Card service log
 });
 
-// Redis test endpoint (keep for debugging)
+// Redis test endpoint
 app.get('/api/test-redis', async (req, res) => {
   try {
     const redis = redisClient.getClient();

@@ -1,14 +1,16 @@
 import React, { useState, useEffect } from 'react';
 import toast from 'react-hot-toast';
 import Button from '../components/Button';
-import { Link } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
 import { membershipService } from '../services/membershipService';
 import { useAuth } from '../hooks/authHooks';
 
 const Membership = () => {
+  const navigate = useNavigate();
   const [billingCycle, setBillingCycle] = useState('monthly');
   const [plans, setPlans] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [purchasing, setPurchasing] = useState(false);
   const [error, setError] = useState(null);
   const { user } = useAuth();
 
@@ -36,13 +38,15 @@ const Membership = () => {
     }
   };
 
-  const handleGetStarted = async (plan) => {
+  const handlePurchase = async (plan) => {
     if (!user) {
       // Redirect to login if not authenticated
-      window.location.href = `/login?redirect=membership&plan=${plan.id}&cycle=${billingCycle}`;
+      navigate(`/login?redirect=membership&plan=${plan.id}&cycle=${billingCycle}`);
       return;
     }
 
+    setPurchasing(true);
+    
     try {
       const response = await membershipService.purchaseMembership({
         plan_id: plan.id,
@@ -50,14 +54,17 @@ const Membership = () => {
         auto_renew: true
       });
 
-      if (response.success) {
-        toast.success('Membership purchased successfully!');
-        // You could also redirect to dashboard
-        // window.location.href = '/dashboard';
+      if (response.success && response.data?.authorization_url) {
+        // Redirect to Paystack payment page
+        window.location.href = response.data.authorization_url;
+      } else {
+        throw new Error('Failed to initiate payment');
       }
     } catch (err) {
       console.error('Purchase failed:', err);
-      toast.error('Failed to purchase membership. Please try again.');
+      toast.error('Failed to initiate payment. Please try again.');
+    } finally {
+      setPurchasing(false);
     }
   };
 
@@ -203,9 +210,10 @@ const Membership = () => {
                   <Button 
                     variant="accent" 
                     className="w-full mb-6 md:mb-8 text-sm md:text-base"
-                    onClick={() => handleGetStarted(plan)}
+                    onClick={() => handlePurchase(plan)}
+                    disabled={purchasing}
                   >
-                    Get Started
+                    {purchasing ? 'Processing...' : 'Get Started'}
                   </Button>
 
                   <ul className="space-y-2 md:space-y-3">
@@ -241,7 +249,7 @@ const Membership = () => {
                 {([
                   'Select your preferred membership plan.',
                   'Visit us or fill out the online form.',
-                  'Make a secure payment at the front desk.',
+                  'Make a secure payment via Paystack (Card, M-Pesa, Bank Transfer).',
                   'Begin your fitness journey immediately!',
                 ]).map((step, idx) => (
                   <li key={idx} className="flex items-start gap-3">
@@ -266,6 +274,7 @@ const Membership = () => {
                 {([
                   { q: 'Can I cancel anytime?', a: 'Yes, you can cancel your membership at any time with no penalties.' },
                   { q: 'Do you offer a free trial?', a: 'Yes, we offer a 7-day free trial for all membership plans.' },
+                  { q: 'What payment methods are accepted?', a: 'We accept all major cards, M-Pesa, and bank transfers via Paystack.' },
                   { q: 'Can I upgrade or downgrade?', a: 'Absolutely! You can change your plan anytime, prorated to your billing cycle.' },
                 ]).map((faq, idx) => (
                   <div key={idx} className="bg-white p-4 md:p-6 rounded-lg border border-gray-200 hover:shadow-md transition">

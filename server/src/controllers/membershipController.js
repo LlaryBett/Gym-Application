@@ -1,6 +1,8 @@
 import MembershipPlan from '../models/MembershipPlan.js';
 import MemberMembership from '../models/MemberMembership.js';
+import Member from '../models/Members.js';
 import { membershipSchemas } from '../utils/validation.js';
+import paystackService from '../services/paystackService.js';
 
 // ==================== PUBLIC ROUTES (Get Plans) ====================
 
@@ -75,7 +77,7 @@ export const getPlanById = async (req, res) => {
 
 // ==================== MEMBERSHIP PURCHASE & MANAGEMENT ====================
 
-// Purchase membership
+// Purchase membership with Paystack
 export const purchaseMembership = async (req, res) => {
     try {
         const { error, value } = membershipSchemas.purchase.validate(req.body);
@@ -87,10 +89,18 @@ export const purchaseMembership = async (req, res) => {
             });
         }
 
-        // ✅ FIXED: Use req.user from JWT instead of req.session
         const member_id = req.user.id;
         const { plan_id, billing_cycle, auto_renew } = value;
 
+        // Get member details
+        const member = await Member.findById(member_id);
+        if (!member) {
+            return res.status(404).json({
+                success: false,
+                message: 'Member not found'
+            });
+        }
+        
         // Get plan details
         const plan = await MembershipPlan.findById(plan_id);
         if (!plan) {
@@ -101,31 +111,30 @@ export const purchaseMembership = async (req, res) => {
         }
 
         // Calculate price
-        const price_paid = billing_cycle === 'monthly' 
+        const amount = billing_cycle === 'monthly' 
             ? parseFloat(plan.price_monthly) 
             : parseFloat(plan.price_yearly);
 
-        // Purchase membership
-        const membership = await MemberMembership.purchase({
-            member_id,
-            plan_id,
-            billing_cycle,
-            price_paid,
-            auto_renew
+        // Initialize Paystack transaction
+        const paystackResponse = await paystackService.initializeTransaction({
+            email: member.email,
+            amount,
+            metadata: {
+                member_id,
+                plan_id,
+                billing_cycle,
+                auto_renew,
+                membership_type: plan.name,
+                member_name: `${member.first_name} ${member.last_name}`
+            }
         });
 
-        res.status(201).json({
+        res.json({
             success: true,
-            message: 'Membership purchased successfully',
+            message: 'Redirect to payment',
             data: {
-                id: membership.id,
-                membership_number: membership.membership_number,
-                plan_name: plan.name,
-                billing_cycle: membership.billing_cycle,
-                price_paid: membership.price_paid,
-                start_date: membership.start_date,
-                end_date: membership.end_date,
-                status: membership.status
+                authorization_url: paystackResponse.authorization_url,
+                reference: paystackResponse.reference
             }
         });
 
@@ -133,16 +142,121 @@ export const purchaseMembership = async (req, res) => {
         console.error('Purchase membership error:', error);
         res.status(500).json({
             success: false,
-            message: 'Failed to purchase membership',
-            error: process.env.NODE_ENV === 'development' ? error.message : undefined
+            message: 'Failed to initiate payment'
         });
+    }
+};
+
+// Handle Paystack payment callback
+export const handlePaymentCallback = async (req, res) => {
+    try {
+        const { reference, trxref } = req.query;
+        const ref = reference || trxref;
+        
+        if (!ref) {
+            return res.redirect(`${process.env.APP_URL}/membership/failed`);
+        }
+
+        // Verify transaction
+        const verification = await paystackService.verifyTransaction(ref);
+        
+        if (verification.data.status === 'success') {
+            const { member_id, plan_id, billing_cycle, auto_renew } = verification.data.metadata;
+            
+            // Calculate price
+            const plan = await MembershipPlan.findById(plan_id);
+            const price_paid = billing_cycle === 'monthly' 
+                ? parseFloat(plan.price_monthly) 
+                : parseFloat(plan.price_yearly);
+
+            // Check if membership already exists
+            const existingMembership = await MemberMembership.getActiveByMemberId(member_id);
+            
+            let membership;
+            if (existingMembership) {
+                // Update existing membership
+                membership = await MemberMembership.update(existingMembership.id, {
+                    plan_id,
+                    billing_cycle,
+                    price_paid,
+                    auto_renew,
+                    status: 'active'
+                });
+            } else {
+                // Create new membership
+                membership = await MemberMembership.purchase({
+                    member_id,
+                    plan_id,
+                    billing_cycle,
+                    price_paid,
+                    auto_renew
+                });
+            }
+
+            // Redirect to success page
+            res.redirect(`${process.env.APP_URL}/membership/success?reference=${ref}`);
+        } else {
+            res.redirect(`${process.env.APP_URL}/membership/failed`);
+        }
+    } catch (error) {
+        console.error('Payment callback error:', error);
+        res.redirect(`${process.env.APP_URL}/membership/failed`);
+    }
+};
+
+// Handle Paystack webhook
+export const handlePaystackWebhook = async (req, res) => {
+    try {
+        // Get the Paystack signature from headers
+        const signature = req.headers['x-paystack-signature'];
+        
+        // Verify signature
+        const isValid = paystackService.verifyWebhookSignature(signature, req.body);
+        
+        if (!isValid) {
+            console.log('❌ Invalid webhook signature');
+            return res.status(401).send('Invalid signature');
+        }
+
+        // Parse the event
+        const event = req.body;
+        console.log('📨 Webhook received:', event.event);
+
+        // Handle different event types
+        switch(event.event) {
+            case 'charge.success':
+                console.log('✅ Payment successful:', event.data.reference);
+                // You can update membership status or send confirmation email here
+                break;
+                
+            case 'charge.failed':
+                console.log('❌ Payment failed:', event.data.reference);
+                break;
+                
+            case 'subscription.create':
+                console.log('📅 Subscription created:', event.data.subscription_code);
+                break;
+                
+            case 'subscription.disable':
+                console.log('⏸️ Subscription disabled:', event.data.subscription_code);
+                break;
+                
+            default:
+                console.log('ℹ️ Unhandled event:', event.event);
+        }
+
+        // Always return 200 OK
+        res.sendStatus(200);
+        
+    } catch (error) {
+        console.error('Webhook error:', error);
+        res.sendStatus(500);
     }
 };
 
 // Get current user's active membership
 export const getMyMembership = async (req, res) => {
     try {
-        // ✅ FIXED: Use req.user from JWT
         const membership = await MemberMembership.getActiveByMemberId(req.user.id);
 
         if (!membership) {
@@ -201,7 +315,6 @@ export const getMyMembershipHistory = async (req, res) => {
     try {
         const { page = 1, limit = 10 } = req.query;
         
-        // ✅ FIXED: Use req.user from JWT
         const result = await MemberMembership.findByMemberId(
             req.user.id,
             page,
@@ -234,7 +347,6 @@ export const cancelMembership = async (req, res) => {
             });
         }
 
-        // ✅ FIXED: Use req.user from JWT
         const membership = await MemberMembership.cancel(
             req.params.id,
             req.user.id,
@@ -271,7 +383,6 @@ export const cancelMembership = async (req, res) => {
 // Toggle auto-renew
 export const toggleAutoRenew = async (req, res) => {
     try {
-        // ✅ FIXED: Use req.user from JWT
         const membership = await MemberMembership.toggleAutoRenew(
             req.params.id,
             req.user.id
@@ -330,7 +441,6 @@ export const changePlan = async (req, res) => {
             ? parseFloat(newPlan.price_monthly)
             : parseFloat(newPlan.price_yearly);
 
-        // ✅ FIXED: Use req.user from JWT
         const membership = await MemberMembership.changePlan(
             req.params.id,
             req.user.id,

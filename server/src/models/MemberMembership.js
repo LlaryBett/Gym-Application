@@ -72,9 +72,40 @@ class MemberMembership {
         }
     }
 
+    // ==================== UPDATE MEMBERSHIP ====================
+    
+    // ✅ NEW: Update existing membership (for payment callback)
+    static async update(id, updateData) {
+        const fields = [];
+        const values = [];
+        let paramCount = 1;
+
+        for (const [key, value] of Object.entries(updateData)) {
+            if (value !== undefined) {
+                fields.push(`${key} = $${paramCount}`);
+                values.push(value);
+                paramCount++;
+            }
+        }
+
+        if (fields.length === 0) {
+            throw new Error('No fields to update');
+        }
+
+        values.push(id);
+        const query = `
+            UPDATE public.member_memberships
+            SET ${fields.join(', ')}, updated_at = CURRENT_TIMESTAMP
+            WHERE id = $${paramCount}
+            RETURNING *
+        `;
+
+        const result = await pool.query(query, values);
+        return result.rows[0];
+    }
+
     // ==================== GET MEMBERSHIPS ====================
     
-    // Get active membership for a member
     static async getActiveByMemberId(memberId) {
         const query = `
             SELECT m.*, p.name as plan_name, p.features, p.price_monthly, p.price_yearly
@@ -91,7 +122,6 @@ class MemberMembership {
         return result.rows[0];
     }
 
-    // Get all memberships for a member (history)
     static async findByMemberId(memberId, page = 1, limit = 10) {
         const offset = (page - 1) * limit;
         
@@ -123,7 +153,6 @@ class MemberMembership {
         };
     }
 
-    // Get membership by ID
     static async findById(id) {
         const query = `
             SELECT m.*, p.name as plan_name, p.features
@@ -136,7 +165,6 @@ class MemberMembership {
         return result.rows[0];
     }
 
-    // Get all active memberships (admin)
     static async findAllActive(page = 1, limit = 10) {
         const offset = (page - 1) * limit;
         
@@ -173,7 +201,6 @@ class MemberMembership {
 
     // ==================== UPDATE MEMBERSHIP ====================
     
-    // Cancel membership
     static async cancel(id, memberId, reason = null) {
         const client = await pool.connect();
         
@@ -211,20 +238,17 @@ class MemberMembership {
         }
     }
 
-    // Upgrade/Downgrade plan
     static async changePlan(id, memberId, newPlanId, newBillingCycle, pricePaid) {
         const client = await pool.connect();
         
         try {
             await client.query('BEGIN');
             
-            // Get current membership
             const current = await client.query(
                 'SELECT plan_id, billing_cycle FROM public.member_memberships WHERE id = $1',
                 [id]
             );
 
-            // Update membership
             const result = await client.query(
                 `UPDATE public.member_memberships
                  SET plan_id = $1, billing_cycle = $2, price_paid = $3,
@@ -264,7 +288,6 @@ class MemberMembership {
         }
     }
 
-    // Toggle auto-renew
     static async toggleAutoRenew(id, memberId) {
         const result = await pool.query(
             `UPDATE public.member_memberships
@@ -279,14 +302,12 @@ class MemberMembership {
 
     // ==================== RENEWAL & EXPIRY ====================
     
-    // Process auto-renewals (cron job)
     static async processRenewals() {
         const client = await pool.connect();
         
         try {
             await client.query('BEGIN');
             
-            // Find memberships expiring in the next 7 days with auto-renew on
             const expiring = await client.query(
                 `SELECT * FROM public.member_memberships
                  WHERE status = 'active'
@@ -295,7 +316,6 @@ class MemberMembership {
             );
 
             for (const membership of expiring.rows) {
-                // Calculate new end date
                 const newEndDate = new Date(membership.end_date);
                 if (membership.billing_cycle === 'monthly') {
                     newEndDate.setMonth(newEndDate.getMonth() + 1);
@@ -303,7 +323,6 @@ class MemberMembership {
                     newEndDate.setFullYear(newEndDate.getFullYear() + 1);
                 }
 
-                // Update membership
                 await client.query(
                     `UPDATE public.member_memberships
                      SET start_date = end_date,
@@ -313,7 +332,6 @@ class MemberMembership {
                     [newEndDate, membership.id]
                 );
 
-                // Create history entry
                 await client.query(
                     `INSERT INTO public.membership_history (
                         member_id, membership_id, action, amount
@@ -322,7 +340,6 @@ class MemberMembership {
                 );
             }
 
-            // Expire memberships that have passed end date
             await client.query(
                 `UPDATE public.member_memberships
                  SET status = 'expired',
@@ -395,64 +412,62 @@ class MemberMembership {
         };
     }
 
-    // ADD these methods to MemberMembership.js
-
-// Create trial membership
-static async createTrial({ member_id, plan_id, start_date, end_date, status }) {
-    const query = `
-        INSERT INTO member_memberships (
-            member_id, plan_id, start_date, end_date, status,
-            billing_cycle, price_paid, auto_renew, membership_number
-        ) VALUES ($1, $2, $3, $4, $5, 'trial', 0, false, $6)
-        RETURNING *
-    `;
+    // ==================== TRIAL METHODS ====================
     
-    const year = new Date().getFullYear();
-    const random = Math.floor(100000 + Math.random() * 900000);
-    const membershipNumber = `TRIAL-${year}-${random}`;
-    
-    const result = await pool.query(query, [
-        member_id, plan_id, start_date, end_date, status, membershipNumber
-    ]);
-    return result.rows[0];
-}
-
-// Check trial expiry
-static async checkTrialExpiry(memberId) {
-    const query = `
-        SELECT mm.*, mp.name as plan_name
-        FROM member_memberships mm
-        JOIN membership_plans mp ON mm.plan_id = mp.id
-        WHERE mm.member_id = $1 AND mm.status = 'active'
-        ORDER BY mm.created_at DESC
-        LIMIT 1
-    `;
-    
-    const result = await pool.query(query, [memberId]);
-    const membership = result.rows[0];
-    
-    if (!membership || membership.plan_name !== '7-Day Free Trial') {
-        return { isTrial: false };
+    static async createTrial({ member_id, plan_id, start_date, end_date, status }) {
+        const query = `
+            INSERT INTO member_memberships (
+                member_id, plan_id, start_date, end_date, status,
+                billing_cycle, price_paid, auto_renew, membership_number
+            ) VALUES ($1, $2, $3, $4, $5, 'trial', 0, false, $6)
+            RETURNING *
+        `;
+        
+        const year = new Date().getFullYear();
+        const random = Math.floor(100000 + Math.random() * 900000);
+        const membershipNumber = `TRIAL-${year}-${random}`;
+        
+        const result = await pool.query(query, [
+            member_id, plan_id, start_date, end_date, status, membershipNumber
+        ]);
+        return result.rows[0];
     }
-    
-    const today = new Date();
-    const trialEnd = new Date(membership.end_date);
-    const isExpired = today > trialEnd;
-    
-    if (isExpired) {
-        await pool.query(
-            'UPDATE member_memberships SET status = $1 WHERE id = $2',
-            ['expired', membership.id]
-        );
+
+    static async checkTrialExpiry(memberId) {
+        const query = `
+            SELECT mm.*, mp.name as plan_name
+            FROM member_memberships mm
+            JOIN membership_plans mp ON mm.plan_id = mp.id
+            WHERE mm.member_id = $1 AND mm.status = 'active'
+            ORDER BY mm.created_at DESC
+            LIMIT 1
+        `;
+        
+        const result = await pool.query(query, [memberId]);
+        const membership = result.rows[0];
+        
+        if (!membership || membership.plan_name !== '7-Day Free Trial') {
+            return { isTrial: false };
+        }
+        
+        const today = new Date();
+        const trialEnd = new Date(membership.end_date);
+        const isExpired = today > trialEnd;
+        
+        if (isExpired) {
+            await pool.query(
+                'UPDATE member_memberships SET status = $1 WHERE id = $2',
+                ['expired', membership.id]
+            );
+        }
+        
+        return {
+            isTrial: true,
+            isExpired,
+            trialEnd: membership.end_date,
+            daysRemaining: Math.ceil((trialEnd - today) / (1000 * 60 * 60 * 24))
+        };
     }
-    
-    return {
-        isTrial: true,
-        isExpired,
-        trialEnd: membership.end_date,
-        daysRemaining: Math.ceil((trialEnd - today) / (1000 * 60 * 60 * 24))
-    };
-}
 
     // ==================== HISTORY ====================
     

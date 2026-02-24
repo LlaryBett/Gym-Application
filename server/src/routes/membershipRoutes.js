@@ -12,6 +12,10 @@ import {
     toggleAutoRenew,
     changePlan,
     
+    // Paystack routes
+    handlePaymentCallback,
+    handlePaystackWebhook,
+    
     // Admin routes
     createPlan,
     updatePlan,
@@ -28,6 +32,11 @@ const router = express.Router();
 router.get('/plans', getAllPlans);
 router.get('/plans/:id', getPlanById);
 
+// ==================== PAYSTACK ROUTES (PUBLIC) ====================
+// These must be public - no auth middleware
+router.get('/callback', handlePaymentCallback);
+router.post('/webhook', handlePaystackWebhook);
+
 // ==================== PROTECTED ROUTES (Require Auth) ====================
 router.use(authMiddleware);
 
@@ -40,12 +49,9 @@ router.put('/:id/toggle-renew', toggleAutoRenew);
 router.put('/:id/change-plan', changePlan);
 
 // ==================== ADMIN ONLY ROUTES ====================
-// Plan management
 router.post('/plans', adminMiddleware, createPlan);
 router.put('/plans/:id', adminMiddleware, updatePlan);
 router.delete('/plans/:id', adminMiddleware, deletePlan);
-
-// Membership management
 router.get('/admin/memberships', adminMiddleware, getAllActiveMemberships);
 router.get('/admin/stats', adminMiddleware, getMembershipStats);
 router.post('/admin/process-renewals', adminMiddleware, processRenewals);
