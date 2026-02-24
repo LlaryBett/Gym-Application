@@ -1,5 +1,5 @@
 // api.js - Frontend API Helper for JWT Token Authentication
-const API_BASE_URL = import.meta.env.VITE_API_URL || 'https://gym-application-sooty.vercel.app/api';
+const API_BASE_URL = import.meta.env.VITE_API_URL || 'https://gym-application-kq9p.onrender.com/api';
 
 // Helper to get token from localStorage
 const getToken = () => localStorage.getItem('token');
