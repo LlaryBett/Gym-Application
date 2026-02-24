@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useCallback } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import toast from 'react-hot-toast';
 import { 
@@ -8,7 +8,7 @@ import {
   FaSignOutAlt, FaChevronRight, FaStar, FaRegStar, FaTrash, FaTimes,
   FaGenderless, FaUserTag, FaInfoCircle, FaExclamationTriangle
 } from 'react-icons/fa';
-import { useProtectedRoute } from '../hooks/authHooks';
+import { useAuth } from '../hooks/authHooks';
 import { authAPI, memberAPI } from '../services/api';
 import { membershipService } from '../services/membershipService';
 import { programService } from '../services/programService';
@@ -17,7 +17,7 @@ import CTA from '../components/CTA';
 
 const Profile = () => {
   const navigate = useNavigate();
-  const { user } = useProtectedRoute(navigate);
+  const { user } = useAuth(); // ✅ Just like Dashboard
   
   const [activeTab, setActiveTab] = useState('overview');
   const [loading, setLoading] = useState(true);
@@ -34,16 +34,30 @@ const Profile = () => {
   const [emergencyContact, setEmergencyContact] = useState({});
   const [isSubmitting, setIsSubmitting] = useState(false);
 
-  const fetchAllProfileData = useCallback(async () => {
+  // ✅ Simple redirect like Dashboard
+  useEffect(() => {
+    if (!user) {
+      navigate('/login', { state: { from: '/profile' } });
+      return;
+    }
+
+    fetchAllProfileData();
+  }, [user]); // ✅ Same dependency as Dashboard
+
+  const fetchAllProfileData = async () => {
+    if (!user) return;
+    
     try {
       setLoading(true);
-      const profileRes = await authAPI.getCurrentUser();
       
+      // Fetch all data
+      const profileRes = await authAPI.getCurrentUser();
       const membershipRes = await membershipService.getMyMembership().catch(() => ({ success: false, data: null }));
       const enrollmentsRes = await programService.getMyEnrollments().catch(() => ({ success: false, data: [] }));
       const bookingsRes = await bookingService.getUserBookings(user.id, { upcoming: true, limit: 5 }).catch(() => ({ success: false, data: { bookings: [] } }));
       const savedRes = await programService.getMySavedPrograms().catch(() => ({ success: false, data: [] }));
 
+      // Set profile data
       if (profileRes.success && profileRes.data?.user) {
         const userData = profileRes.data.user;
         const nameParts = userData.name?.split(' ') || [];
@@ -74,23 +88,21 @@ const Profile = () => {
         });
       }
 
+      // Set other data
       if (membershipRes.success) setMembership(membershipRes.data);
       setEnrolledPrograms(enrollmentsRes.success ? enrollmentsRes.data || [] : []);
       setUpcomingBookings(bookingsRes.success ? bookingsRes.data.bookings || [] : []);
       setSavedPrograms(savedRes.success ? savedRes.data || [] : []);
-    } catch {
+      
+    } catch (err) {
+      console.error('Failed to load profile data:', err);
       setError('Failed to load profile data');
     } finally {
       setLoading(false);
     }
-  }, [user]);
+  };
 
-  useEffect(() => {
-    if (user) {
-      fetchAllProfileData();
-    }
-  }, [user, fetchAllProfileData]);
-
+  // Edit handlers (same as before)
   const handleEditSubmit = async (e) => {
     e.preventDefault();
     if (!user?.id) return;
@@ -199,7 +211,6 @@ const Profile = () => {
 
   return (
     <div className="min-h-screen bg-gray-50">
-
       {/* ── MOBILE LAYOUT (< lg) ── */}
       <div className="lg:hidden">
         <div className="container mx-auto px-4 py-8 space-y-6">
@@ -279,9 +290,7 @@ const Profile = () => {
               
               {/* Identity Card */}
               <div className="bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden">
-                {/* Orange banner */}
                 <div className="h-16 bg-gradient-to-r from-orange-400 to-orange-600" />
-                {/* Avatar floated up */}
                 <div className="px-5 pb-5">
                   <div className="w-16 h-16 bg-white rounded-full flex items-center justify-center -mt-8 shadow-md border-2 border-white mb-3">
                     <span className="text-2xl font-bold text-orange-500">{getInitials()}</span>
@@ -357,7 +366,7 @@ const Profile = () => {
             {/* ── MAIN CONTENT ── */}
             <main className="flex-1 min-w-0 space-y-6">
               
-              {/* Membership Card - full width in main */}
+              {/* Membership Card */}
               {membership && <MembershipCard membership={membership} formatDate={formatDate} handleCancelMembership={handleCancelMembership} />}
 
               {/* Tab Content */}
@@ -386,7 +395,7 @@ const Profile = () => {
         </div>
       </div>
 
-      {/* ── EDIT MODAL (shared) ── */}
+      {/* EDIT MODAL */}
       {showEditModal && (
         <div className="fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4 overflow-y-auto">
           <div className="bg-white rounded-2xl p-8 max-w-2xl w-full relative max-h-[90vh] overflow-y-auto">
@@ -458,10 +467,9 @@ const Profile = () => {
   );
 };
 
-/* ─── Membership Card (shared between mobile & desktop) ─── */
+/* ─── Membership Card ─── */
 const MembershipCard = ({ membership, formatDate, handleCancelMembership }) => (
   <div className="bg-gradient-to-br from-orange-500 to-orange-600 rounded-xl lg:rounded-2xl shadow-lg p-6 text-white">
-    {/* Header row */}
     <div className="flex items-start justify-between gap-4">
       <div className="flex items-center gap-3">
         <div className="bg-white/20 p-3 rounded-xl flex-shrink-0">
@@ -480,7 +488,6 @@ const MembershipCard = ({ membership, formatDate, handleCancelMembership }) => (
         </div>
       </div>
 
-      {/* Price */}
       <div className="text-right flex-shrink-0">
         <div className="text-2xl font-bold leading-none">
           {membership.isTrial ? 'Free' : `Ksh${membership.price_paid}`}
@@ -489,7 +496,6 @@ const MembershipCard = ({ membership, formatDate, handleCancelMembership }) => (
       </div>
     </div>
 
-    {/* Stats row */}
     <div className="flex flex-wrap gap-4 mt-5 pt-5 border-t border-white/20">
       <div>
         <p className="text-orange-100 text-xs">Status</p>
@@ -517,7 +523,6 @@ const MembershipCard = ({ membership, formatDate, handleCancelMembership }) => (
       )}
     </div>
 
-    {/* Action buttons */}
     <div className="flex gap-3 mt-5">
       {membership.isTrial ? (
         <>
@@ -544,14 +549,11 @@ const MembershipCard = ({ membership, formatDate, handleCancelMembership }) => (
   </div>
 );
 
-/* ─── Tab Content (shared) ─── */
+/* ─── Tab Content ─── */
 const TabContent = ({ activeTab, profile, enrolledPrograms, upcomingBookings, savedPrograms, formatDate, handleUnsaveProgram, openEditModal, isDesktop }) => {
   
-  const FaCalendarAlt2 = FaCalendarAlt;
-
   if (activeTab === 'overview') return (
     <div className="space-y-6">
-      {/* Upcoming Bookings */}
       <div>
         <h4 className="font-semibold text-gray-800 mb-3 flex items-center gap-2 text-sm">
           <FaCalendarAlt className="text-orange-400" /> Upcoming Schedule
@@ -573,7 +575,6 @@ const TabContent = ({ activeTab, profile, enrolledPrograms, upcomingBookings, sa
         )}
       </div>
 
-      {/* Enrolled Programs */}
       <div>
         <h4 className="font-semibold text-gray-800 mb-3 flex items-center gap-2 text-sm">
           <FaDumbbell className="text-orange-400" /> My Programs
@@ -595,7 +596,6 @@ const TabContent = ({ activeTab, profile, enrolledPrograms, upcomingBookings, sa
         )}
       </div>
 
-      {/* Emergency Contact Preview */}
       {profile?.emergency_contact_name && (
         <div>
           <h4 className="font-semibold text-gray-800 mb-3 flex items-center gap-2 text-sm">

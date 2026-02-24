@@ -16,34 +16,44 @@ export const useRequireAuth = () => {
   return auth;
 };
 
-// ✅ Updated: Protected route hook with token check
+// ✅ FIXED: Protected route hook with proper loading state handling
 export const useProtectedRoute = (navigate) => {
   const auth = useAuth();
   
   useEffect(() => {
     const token = localStorage.getItem('token');
     
-    if (!auth.loading) {
-      if (!token) {
-        // No token at all
-        navigate('/login', { state: { from: window.location.pathname } });
-      } else if (!auth.isAuthenticated) {
-        // Token exists but verification failed
-        console.warn('Token invalid or expired');
-        navigate('/login', { state: { from: window.location.pathname } });
-      }
+    // Case 1: No token at all - immediate redirect
+    if (!token) {
+      console.log('🔒 No token found, redirecting to login');
+      navigate('/login', { state: { from: window.location.pathname } });
+      return;
     }
+    
+    // Case 2: Still loading - wait for auth to verify
+    if (auth.loading) {
+      console.log('⏳ Auth still loading, waiting...');
+      return;
+    }
+    
+    // Case 3: Loading done but not authenticated - token invalid/expired
+    if (!auth.isAuthenticated) {
+      console.log('🔒 Token invalid or expired, redirecting to login');
+      localStorage.removeItem('token'); // Clear invalid token
+      navigate('/login', { state: { from: window.location.pathname } });
+    }
+    
   }, [auth.loading, auth.isAuthenticated, navigate]);
 
   return auth;
 };
 
-// ✅ NEW: Hook to get token
+// ✅ Hook to get token
 export const useToken = () => {
   return localStorage.getItem('token');
 };
 
-// ✅ NEW: Hook to check if user has specific role
+// ✅ Hook to check if user has specific role
 export const useHasRole = (role) => {
   const { user } = useAuth();
   return user?.role === role;

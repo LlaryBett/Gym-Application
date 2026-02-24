@@ -87,8 +87,9 @@ export const purchaseMembership = async (req, res) => {
             });
         }
 
+        // ✅ FIXED: Use req.user from JWT instead of req.session
+        const member_id = req.user.id;
         const { plan_id, billing_cycle, auto_renew } = value;
-        const member_id = req.session.user.id;
 
         // Get plan details
         const plan = await MembershipPlan.findById(plan_id);
@@ -141,7 +142,8 @@ export const purchaseMembership = async (req, res) => {
 // Get current user's active membership
 export const getMyMembership = async (req, res) => {
     try {
-        const membership = await MemberMembership.getActiveByMemberId(req.session.user.id);
+        // ✅ FIXED: Use req.user from JWT
+        const membership = await MemberMembership.getActiveByMemberId(req.user.id);
 
         if (!membership) {
             return res.status(404).json({
@@ -172,16 +174,16 @@ export const getMyMembership = async (req, res) => {
                 price_paid: parseFloat(membership.price_paid),
                 start_date: membership.start_date,
                 end_date: membership.end_date,
-                status: isExpired ? 'expired' : membership.status, // Show expired if trial ended
+                status: isExpired ? 'expired' : membership.status,
                 auto_renew: membership.auto_renew,
                 features: membership.features,
                 days_remaining: daysRemaining > 0 ? daysRemaining : 0,
                 
-                // ✅ NEW TRIAL-SPECIFIC FIELDS
+                // Trial-specific fields
                 isTrial,
                 trial_ends: isTrial ? membership.end_date : null,
                 trial_expired: isExpired,
-                requires_upgrade: isExpired // Helper for frontend
+                requires_upgrade: isExpired
             }
         });
 
@@ -198,8 +200,10 @@ export const getMyMembership = async (req, res) => {
 export const getMyMembershipHistory = async (req, res) => {
     try {
         const { page = 1, limit = 10 } = req.query;
+        
+        // ✅ FIXED: Use req.user from JWT
         const result = await MemberMembership.findByMemberId(
-            req.session.user.id,
+            req.user.id,
             page,
             limit
         );
@@ -230,9 +234,10 @@ export const cancelMembership = async (req, res) => {
             });
         }
 
+        // ✅ FIXED: Use req.user from JWT
         const membership = await MemberMembership.cancel(
             req.params.id,
-            req.session.user.id,
+            req.user.id,
             value.reason
         );
 
@@ -266,9 +271,10 @@ export const cancelMembership = async (req, res) => {
 // Toggle auto-renew
 export const toggleAutoRenew = async (req, res) => {
     try {
+        // ✅ FIXED: Use req.user from JWT
         const membership = await MemberMembership.toggleAutoRenew(
             req.params.id,
-            req.session.user.id
+            req.user.id
         );
 
         if (!membership) {
@@ -324,9 +330,10 @@ export const changePlan = async (req, res) => {
             ? parseFloat(newPlan.price_monthly)
             : parseFloat(newPlan.price_yearly);
 
+        // ✅ FIXED: Use req.user from JWT
         const membership = await MemberMembership.changePlan(
             req.params.id,
-            req.session.user.id,
+            req.user.id,
             new_plan_id,
             new_billing_cycle,
             pricePaid

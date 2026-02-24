@@ -45,10 +45,10 @@ export const getProgramById = async (req, res) => {
             });
         }
 
-        // Check if user has saved this program
+        // ✅ FIXED: Use req.user from JWT instead of req.session
         let isSaved = false;
-        if (req.session?.user?.id) {
-            isSaved = await Program.isProgramSaved(req.session.user.id, parseInt(req.params.id));
+        if (req.user?.id) {
+            isSaved = await Program.isProgramSaved(req.user.id, parseInt(req.params.id));
         }
 
         res.json({
@@ -181,7 +181,8 @@ export const enrollInProgram = async (req, res) => {
             });
         }
 
-        const memberId = req.session.user.id;
+        // ✅ FIXED: Use req.user from JWT
+        const memberId = req.user.id;
         const { program_id } = value;
 
         const enrollment = await Program.enroll(memberId, program_id);
@@ -208,25 +209,23 @@ export const enrollInProgram = async (req, res) => {
     }
 };
 
-// In programController.js
+// Get my enrollments
 export const getMyEnrollments = async (req, res) => {
   try {
     console.log('========== GET MY ENROLLMENTS ==========');
-    console.log('Session user:', req.session?.user);
+    console.log('JWT User:', req.user);
     
-    if (!req.session?.user?.id) {
-      console.log('❌ No user ID in session');
+    // ✅ FIXED: Use req.user from JWT
+    if (!req.user?.id) {
+      console.log('❌ No user ID in JWT');
       return res.status(401).json({
         success: false,
         message: 'Not authenticated'
       });
     }
 
-    const memberId = req.session.user.id;
+    const memberId = req.user.id;
     console.log('Fetching enrollments for member ID:', memberId);
-    
-    // Check if the model method exists
-    console.log('Program.getMemberEnrollments type:', typeof Program.getMemberEnrollments);
     
     const enrollments = await Program.getMemberEnrollments(memberId);
     console.log('Raw enrollments from model:', enrollments);
@@ -241,11 +240,6 @@ export const getMyEnrollments = async (req, res) => {
     
   } catch (error) {
     console.error('❌ ERROR in getMyEnrollments:', error);
-    console.error('Error name:', error.name);
-    console.error('Error message:', error.message);
-    console.error('Error stack:', error.stack);
-    if (error.code) console.error('Error code:', error.code);
-    if (error.detail) console.error('Error detail:', error.detail);
     
     res.status(500).json({
       success: false,
@@ -254,13 +248,17 @@ export const getMyEnrollments = async (req, res) => {
     });
   }
 };
+
 // ==================== SAVED PROGRAMS (WISHLIST) ====================
 
 // Save program
 export const saveProgram = async (req, res) => {
     try {
-        const memberId = req.session.user.id;
+        // ✅ FIXED: Use req.user from JWT
+        const memberId = req.user.id;
         const programId = parseInt(req.params.id);
+
+        console.log(`Saving program ${programId} for user ${memberId}`);
 
         const saved = await Program.saveProgram(memberId, programId);
 
@@ -281,7 +279,8 @@ export const saveProgram = async (req, res) => {
 // Unsave program
 export const unsaveProgram = async (req, res) => {
     try {
-        const memberId = req.session.user.id;
+        // ✅ FIXED: Use req.user from JWT
+        const memberId = req.user.id;
         const programId = parseInt(req.params.id);
 
         const unsaved = await Program.unsaveProgram(memberId, programId);
@@ -303,7 +302,8 @@ export const unsaveProgram = async (req, res) => {
 // Get my saved programs
 export const getMySavedPrograms = async (req, res) => {
     try {
-        const memberId = req.session.user.id;
+        // ✅ FIXED: Use req.user from JWT
+        const memberId = req.user.id;
         const programs = await Program.getSavedPrograms(memberId);
 
         res.json({
@@ -865,4 +865,3 @@ export const getProgramStats = async (req, res) => {
         });
     }
 };
-
