@@ -4,7 +4,7 @@ const API_BASE_URL = import.meta.env.VITE_API_URL || 'https://gym-application-kq
 // Helper to get token from localStorage
 const getToken = () => localStorage.getItem('token');
 
-// Helper for making requests with JWT token
+// In api.js - modify the request function
 const request = async (endpoint, options = {}) => {
   const token = getToken();
   
@@ -13,7 +13,6 @@ const request = async (endpoint, options = {}) => {
     ...options.headers,
   };
 
-  // Add Authorization header if token exists
   if (token) {
     headers['Authorization'] = `Bearer ${token}`;
   }
@@ -21,25 +20,17 @@ const request = async (endpoint, options = {}) => {
   const config = {
     ...options,
     headers,
-    // No credentials needed - using token instead
   };
 
   try {
     const response = await fetch(`${API_BASE_URL}${endpoint}`, config);
     
-    // Handle 204 No Content
     if (response.status === 204) return null;
 
     const data = await response.json();
 
     if (!response.ok) {
-      // Handle 401 Unauthorized - token expired or invalid
-      if (response.status === 401) {
-        // Clear token and redirect to login
-        localStorage.removeItem('token');
-        window.location.href = '/login';
-      }
-      
+      // Just throw the error - let React handle it
       throw {
         status: response.status,
         ...data,
@@ -51,7 +42,7 @@ const request = async (endpoint, options = {}) => {
     if (error.status) throw error;
     throw {
       success: false,
-      message: error.message || 'Network error. Please check your connection.',
+      message: error.message || 'Network error',
     };
   }
 };

@@ -6,6 +6,9 @@ import { programSchemas } from '../utils/validation.js';
 // Get all programs
 export const getAllPrograms = async (req, res) => {
     try {
+        console.log('========== GET ALL PROGRAMS ==========');
+        console.log('Query params:', req.query);
+        
         const { error, value } = programSchemas.getAll.validate(req.query);
         if (error) {
             return res.status(400).json({
@@ -15,20 +18,62 @@ export const getAllPrograms = async (req, res) => {
             });
         }
 
-        const { page, limit, category, featured, search } = value;
-        const filters = { category, featured, search };
+        const { page = 1, limit = 10, category, level, featured, search } = value;
+        const filters = { 
+            category, 
+            level,
+            featured, 
+            search 
+        };
+        
+        console.log('Filters:', filters);
         
         const result = await Program.findAll(page, limit, filters);
+        
+        // Format programs to match frontend expectations
+        const formattedPrograms = result.programs.map(program => ({
+            id: program.id,
+            title: program.title,
+            description: program.description,
+            category: program.category,
+            level: program.level || 'All Levels',
+            duration: program.duration,
+            price: program.price,
+            image: program.image,
+            video_url: program.video_url,
+            featured: program.featured || false,
+            capacity: program.capacity,
+            instructor_id: program.instructor_id,
+            instructor_name: program.instructor_name,
+            instructor_bio: program.instructor_bio,
+            instructor_image: program.instructor_image,
+            enrolled_count: program.enrolled_count || 0,
+            total_spots: program.total_spots,
+            status: program.status || 'active',
+            schedule: program.schedule || [],
+            curriculum: program.curriculum || [],
+            faqs: program.faqs || [],
+            gallery: program.gallery || [],
+            start_dates: program.start_dates || [],
+            related_programs: program.related_programs || [],
+            upgrade_options: program.upgrade_options || [],
+            created_at: program.created_at,
+            updated_at: program.updated_at
+        }));
 
         res.json({
             success: true,
-            data: result
+            data: {
+                programs: formattedPrograms,
+                pagination: result.pagination
+            }
         });
     } catch (error) {
-        console.error('Get programs error:', error);
+        console.error('❌ Get programs error:', error);
         res.status(500).json({
             success: false,
-            message: 'Failed to fetch programs'
+            message: 'Failed to fetch programs',
+            error: process.env.NODE_ENV === 'development' ? error.message : undefined
         });
     }
 };
@@ -153,16 +198,25 @@ export const getAllSchedules = async (req, res) => {
 export const getProgramCategories = async (req, res) => {
     try {
         const categories = await Program.getCategories();
+        
+        // Format categories to match frontend expectations
+        const formattedCategories = categories.map(cat => ({
+            id: cat.id,
+            name: cat.name,
+            display_order: cat.display_order,
+            count: cat.count || 0
+        }));
 
         res.json({
             success: true,
-            data: categories
+            data: formattedCategories
         });
     } catch (error) {
-        console.error('Get categories error:', error);
+        console.error('❌ Get categories error:', error);
         res.status(500).json({
             success: false,
-            message: 'Failed to fetch categories'
+            message: 'Failed to fetch categories',
+            error: process.env.NODE_ENV === 'development' ? error.message : undefined
         });
     }
 };

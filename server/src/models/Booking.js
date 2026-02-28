@@ -16,7 +16,8 @@ class Booking {
             session_type = 'one-on-one',
             duration_minutes = 60,
             notes = '',
-            special_requests = ''
+            special_requests = '',
+            amount = 0
         } = bookingData;
 
         const client = await pool.connect();
@@ -24,20 +25,28 @@ class Booking {
         try {
             await client.query('BEGIN');
             
+            // Generate booking number
+            const bookingNumberResult = await client.query(
+                `SELECT 'BK' || TO_CHAR(NOW(), 'YYYYMMDD') || LPAD(COALESCE(MAX(SUBSTRING(booking_number FROM 11)::INTEGER), 0) + 1::TEXT, 4, '0') as booking_number
+                 FROM public.bookings 
+                 WHERE booking_number LIKE 'BK' || TO_CHAR(NOW(), 'YYYYMMDD') || '%'`
+            );
+            const booking_number = bookingNumberResult.rows[0].booking_number;
+            
             // Insert booking
             const bookingQuery = `
                 INSERT INTO public.bookings (
-                    member_id, trainer_id, service_id, service_name, trainer_name,
+                    booking_number, member_id, trainer_id, service_id, service_name, trainer_name,
                     member_name, member_email, booking_date, booking_time, session_type,
-                    duration_minutes, notes, special_requests, status, payment_status
-                ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, 'pending', 'unpaid')
+                    duration_minutes, notes, special_requests, amount, status, payment_status
+                ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, 'pending', 'unpaid')
                 RETURNING *
             `;
             
             const bookingValues = [
-                member_id, trainer_id, service_id, service_name, trainer_name,
+                booking_number, member_id, trainer_id, service_id, service_name, trainer_name,
                 member_name, member_email, booking_date, booking_time, session_type,
-                duration_minutes, notes, special_requests
+                duration_minutes, notes, special_requests, amount
             ];
             
             const bookingResult = await client.query(bookingQuery, bookingValues);
@@ -51,7 +60,7 @@ class Booking {
                 [booking.id, trainer_id, booking_date, booking_time]
             );
             
-            // Create booking history entry
+            // Create booking history entry - REMOVED changed_by_role
             await client.query(
                 `INSERT INTO public.booking_history (booking_id, action, previous_status, new_status, changed_by)
                  VALUES ($1, 'created', NULL, 'pending', $2)`,
@@ -78,7 +87,11 @@ class Booking {
             SELECT b.*, 
                    s.title as service_title,
                    t.name as trainer_full_name,
-                   m.first_name || ' ' || m.last_name as member_full_name
+                   t.specialty as trainer_specialty,
+                   t.image as trainer_image,
+                   m.first_name || ' ' || m.last_name as member_full_name,
+                   m.email as member_email,
+                   m.cell_phone as member_phone
             FROM public.bookings b
             LEFT JOIN public.services s ON b.service_id = s.id
             LEFT JOIN public.trainers t ON b.trainer_id = t.id
@@ -190,24 +203,35 @@ class Booking {
 
         const result = await pool.query(query, values);
         
+        // Get total count
+        let countQuery = `SELECT COUNT(*) FROM public.bookings WHERE trainer_id = $1 AND status != 'deleted'`;
+        const countResult = await pool.query(countQuery, [trainerId]);
+        
         return {
             bookings: result.rows,
             pagination: {
                 page: parseInt(page),
                 limit: parseInt(limit),
-                total: result.rows.length
+                total: parseInt(countResult.rows[0].count),
+                totalPages: Math.ceil(countResult.rows[0].count / limit)
             }
         };
     }
 
-    // Get all bookings (admin)
+    // Get all bookings (admin) with full filters
     static async findAll(page = 1, limit = 10, filters = {}) {
         const offset = (page - 1) * limit;
         let query = `
             SELECT b.*, 
                    s.title as service_title,
                    t.name as trainer_name,
-                   m.first_name || ' ' || m.last_name as member_name
+                   t.specialty as trainer_specialty,
+                   t.image as trainer_image,
+                   m.first_name || ' ' || m.last_name as member_name,
+                   m.email as member_email,
+                   m.cell_phone as member_phone,
+                   m.first_name as member_first_name,
+                   m.last_name as member_last_name
             FROM public.bookings b
             LEFT JOIN public.services s ON b.service_id = s.id
             LEFT JOIN public.trainers t ON b.trainer_id = t.id
@@ -248,14 +272,79 @@ class Booking {
             paramCount++;
         }
 
+        if (filters.search) {
+            query += ` AND (
+                b.booking_number ILIKE $${paramCount} OR
+                m.first_name ILIKE $${paramCount} OR
+                m.last_name ILIKE $${paramCount} OR
+                m.email ILIKE $${paramCount} OR
+                t.name ILIKE $${paramCount} OR
+                b.service_name ILIKE $${paramCount}
+            )`;
+            values.push(`%${filters.search}%`);
+            paramCount++;
+        }
+
         query += ` ORDER BY b.created_at DESC LIMIT $${paramCount} OFFSET $${paramCount + 1}`;
         values.push(limit, offset);
 
         const result = await pool.query(query, values);
         
-        // Get total count
-        let countQuery = `SELECT COUNT(*) FROM public.bookings WHERE status != 'deleted'`;
-        const countResult = await pool.query(countQuery);
+        // Get total count with same filters
+        let countQuery = `
+            SELECT COUNT(*) 
+            FROM public.bookings b
+            LEFT JOIN public.members m ON b.member_id = m.id
+            LEFT JOIN public.trainers t ON b.trainer_id = t.id
+            WHERE b.status != 'deleted'
+        `;
+        let countValues = [];
+        let countParamCount = 1;
+        
+        if (filters.status) {
+            countQuery += ` AND b.status = $${countParamCount}`;
+            countValues.push(filters.status);
+            countParamCount++;
+        }
+        
+        if (filters.member_id) {
+            countQuery += ` AND b.member_id = $${countParamCount}`;
+            countValues.push(filters.member_id);
+            countParamCount++;
+        }
+        
+        if (filters.trainer_id) {
+            countQuery += ` AND b.trainer_id = $${countParamCount}`;
+            countValues.push(filters.trainer_id);
+            countParamCount++;
+        }
+        
+        if (filters.from_date) {
+            countQuery += ` AND b.booking_date >= $${countParamCount}`;
+            countValues.push(filters.from_date);
+            countParamCount++;
+        }
+        
+        if (filters.to_date) {
+            countQuery += ` AND b.booking_date <= $${countParamCount}`;
+            countValues.push(filters.to_date);
+            countParamCount++;
+        }
+        
+        if (filters.search) {
+            countQuery += ` AND (
+                b.booking_number ILIKE $${countParamCount} OR
+                m.first_name ILIKE $${countParamCount} OR
+                m.last_name ILIKE $${countParamCount} OR
+                m.email ILIKE $${countParamCount} OR
+                t.name ILIKE $${countParamCount} OR
+                b.service_name ILIKE $${countParamCount}
+            )`;
+            countValues.push(`%${filters.search}%`);
+            countParamCount++;
+        }
+        
+        const countResult = await pool.query(countQuery, countValues);
         
         return {
             bookings: result.rows,
@@ -263,14 +352,14 @@ class Booking {
                 page: parseInt(page),
                 limit: parseInt(limit),
                 total: parseInt(countResult.rows[0].count),
-                totalPages: Math.ceil(countResult.rows[0].count / limit)
+                totalPages: Math.ceil(parseInt(countResult.rows[0].count) / limit)
             }
         };
     }
 
     // ==================== UPDATE BOOKING ====================
     
-    // Update booking status
+    // Update booking status - REMOVED changed_by_role
     static async updateStatus(id, status, changedBy, reason = null) {
         const client = await pool.connect();
         
@@ -283,49 +372,58 @@ class Booking {
                 [id]
             );
             
+            if (!current.rows[0]) {
+                await client.query('ROLLBACK');
+                return null;
+            }
+            
             const previousStatus = current.rows[0]?.status;
             
             // Update status
             const statusField = status === 'cancelled' ? 'cancelled_at' : 
                               status === 'completed' ? 'completed_at' : null;
             
-            let updateQuery = `UPDATE public.bookings SET status = $1`;
+            let updateQuery = `UPDATE public.bookings SET status = $1, updated_at = CURRENT_TIMESTAMP`;
+            let values = [status];
+            let paramCount = 2;
+            
             if (statusField) {
                 updateQuery += `, ${statusField} = CURRENT_TIMESTAMP`;
             }
-            if (status === 'cancelled' && reason) {
-                updateQuery += `, cancellation_reason = $2`;
-            }
-            updateQuery += ` WHERE id = $${status === 'cancelled' && reason ? '3' : '2'} RETURNING *`;
             
-            const values = [status];
             if (status === 'cancelled' && reason) {
-                values.push(reason, id);
-            } else {
-                values.push(id);
+                updateQuery += `, cancellation_reason = $${paramCount}`;
+                values.push(reason);
+                paramCount++;
             }
+            
+            updateQuery += ` WHERE id = $${paramCount} RETURNING *`;
+            values.push(id);
             
             const result = await client.query(updateQuery, values);
             
-            // Create history entry
-            await client.query(
-                `INSERT INTO public.booking_history (booking_id, action, previous_status, new_status, changed_by, notes)
-                 VALUES ($1, $2, $3, $4, $5, $6)`,
-                [id, status, previousStatus, status, changedBy, reason]
-            );
+            if (result.rows[0]) {
+                // Create history entry - REMOVED changed_by_role
+                await client.query(
+                    `INSERT INTO public.booking_history (booking_id, action, previous_status, new_status, changed_by, notes)
+                     VALUES ($1, $2, $3, $4, $5, $6)`,
+                    [id, status, previousStatus, status, changedBy, reason]
+                );
+            }
             
             await client.query('COMMIT');
             return result.rows[0];
             
         } catch (error) {
             await client.query('ROLLBACK');
+            console.error('Error in updateStatus:', error);
             throw error;
         } finally {
             client.release();
         }
     }
 
-    // Reschedule booking
+    // Reschedule booking - REMOVED changed_by_role
     static async reschedule(id, newDate, newTime, changedBy) {
         const client = await pool.connect();
         
@@ -334,9 +432,14 @@ class Booking {
             
             // Get current booking
             const booking = await client.query(
-                'SELECT trainer_id, booking_date, booking_time, reschedule_count FROM public.bookings WHERE id = $1',
+                'SELECT trainer_id, booking_date, booking_time, reschedule_count, status FROM public.bookings WHERE id = $1',
                 [id]
             );
+            
+            if (!booking.rows[0]) {
+                await client.query('ROLLBACK');
+                return null;
+            }
             
             // Free up old slot
             await client.query(
@@ -357,16 +460,17 @@ class Booking {
             // Update booking
             const result = await client.query(
                 `UPDATE public.bookings 
-                 SET booking_date = $1, booking_time = $2, reschedule_count = $3, status = 'confirmed'
+                 SET booking_date = $1, booking_time = $2, reschedule_count = $3, status = 'confirmed', updated_at = CURRENT_TIMESTAMP
                  WHERE id = $4 RETURNING *`,
                 [newDate, newTime, (booking.rows[0].reschedule_count || 0) + 1, id]
             );
             
-            // Create history entry
+            // Create history entry - REMOVED changed_by_role
             await client.query(
                 `INSERT INTO public.booking_history (booking_id, action, previous_status, new_status, changed_by, notes)
-                 VALUES ($1, 'rescheduled', 'confirmed', 'confirmed', $2, $3)`,
-                [id, changedBy, `Rescheduled from ${booking.rows[0].booking_date} ${booking.rows[0].booking_time}`]
+                 VALUES ($1, 'rescheduled', $2, 'confirmed', $3, $4)`,
+                [id, booking.rows[0].status, changedBy, 
+                 `Rescheduled from ${booking.rows[0].booking_date} ${booking.rows[0].booking_time}`]
             );
             
             await client.query('COMMIT');
@@ -374,6 +478,7 @@ class Booking {
             
         } catch (error) {
             await client.query('ROLLBACK');
+            console.error('Error in reschedule:', error);
             throw error;
         } finally {
             client.release();
@@ -382,15 +487,51 @@ class Booking {
 
     // ==================== DELETE BOOKING ====================
     
-    // Soft delete
-    static async delete(id) {
-        const result = await pool.query(
-            `UPDATE public.bookings 
-             SET status = 'deleted', updated_at = CURRENT_TIMESTAMP 
-             WHERE id = $1 RETURNING *`,
-            [id]
-        );
-        return result.rows[0];
+    // Soft delete - REMOVED changed_by_role
+    static async delete(id, deletedBy) {
+        const client = await pool.connect();
+        
+        try {
+            await client.query('BEGIN');
+            
+            // Get current booking
+            const current = await client.query(
+                'SELECT status FROM public.bookings WHERE id = $1',
+                [id]
+            );
+            
+            if (!current.rows[0]) {
+                await client.query('ROLLBACK');
+                return null;
+            }
+            
+            const previousStatus = current.rows[0].status;
+            
+            // Soft delete
+            const result = await client.query(
+                `UPDATE public.bookings 
+                 SET status = 'deleted', updated_at = CURRENT_TIMESTAMP 
+                 WHERE id = $1 RETURNING *`,
+                [id]
+            );
+            
+            // Create history entry - REMOVED changed_by_role
+            await client.query(
+                `INSERT INTO public.booking_history (booking_id, action, previous_status, new_status, changed_by)
+                 VALUES ($1, 'deleted', $2, 'deleted', $3)`,
+                [id, previousStatus, deletedBy]
+            );
+            
+            await client.query('COMMIT');
+            return result.rows[0];
+            
+        } catch (error) {
+            await client.query('ROLLBACK');
+            console.error('Error in delete:', error);
+            throw error;
+        } finally {
+            client.release();
+        }
     }
 
     // ==================== AVAILABILITY ====================
@@ -457,11 +598,11 @@ class Booking {
             pool.query(`SELECT COUNT(*) FROM public.bookings WHERE status = 'confirmed'`),
             pool.query(`SELECT COUNT(*) FROM public.bookings WHERE status = 'completed'`),
             pool.query(`SELECT COUNT(*) FROM public.bookings WHERE status = 'cancelled'`),
-            pool.query(`SELECT COALESCE(SUM(amount), 0) as total FROM public.booking_payments WHERE status = 'completed'`),
+            pool.query(`SELECT COALESCE(SUM(amount), 0) as total FROM public.bookings WHERE payment_status = 'paid'`),
             pool.query(`
                 SELECT service_name, COUNT(*) as count 
                 FROM public.bookings 
-                WHERE status != 'deleted' 
+                WHERE status != 'deleted' AND service_name IS NOT NULL
                 GROUP BY service_name 
                 ORDER BY count DESC 
                 LIMIT 5
@@ -499,6 +640,33 @@ class Booking {
         
         const result = await pool.query(query, [bookingId]);
         return result.rows;
+    }
+
+    // ==================== PAYMENT UPDATE ====================
+    
+    static async updatePaymentStatus(id, paymentStatus, paymentMethod = null, transactionId = null) {
+        const client = await pool.connect();
+        
+        try {
+            await client.query('BEGIN');
+            
+            const result = await client.query(
+                `UPDATE public.bookings 
+                 SET payment_status = $1, payment_method = $2, transaction_id = $3, updated_at = CURRENT_TIMESTAMP
+                 WHERE id = $4 RETURNING *`,
+                [paymentStatus, paymentMethod, transactionId, id]
+            );
+            
+            await client.query('COMMIT');
+            return result.rows[0];
+            
+        } catch (error) {
+            await client.query('ROLLBACK');
+            console.error('Error in updatePaymentStatus:', error);
+            throw error;
+        } finally {
+            client.release();
+        }
     }
 }
 

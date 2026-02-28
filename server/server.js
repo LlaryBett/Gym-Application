@@ -52,7 +52,13 @@ app.use(express.urlencoded({ extended: true, limit: '10mb' }));
 // Import middleware after env is configured
 const { globalErrorHandler, notFound } = await import('./src/middleware/errorHandler.js');
 const { apiLimiter, registrationLimiter, loginLimiter } = await import('./src/middleware/rateLimiter.js');
-const { authMiddleware, adminMiddleware } = await import('./src/middleware/auth.js');
+const { 
+  authMiddleware, 
+  adminMiddleware, 
+  trainerMiddleware,
+  optionalAuthMiddleware,
+  allowRoles 
+} = await import('./src/middleware/auth.js');
 const { checkTrialExpiry } = await import('./src/middleware/trialMiddleware.js');
 
 // Import routes
@@ -64,7 +70,9 @@ import bookingRoutes from './src/routes/bookingRoutes.js';
 import membershipRoutes from './src/routes/membershipRoutes.js';
 import programRoutes from './src/routes/programRoutes.js';
 import chatRoutes from './src/routes/chatRoutes.js';
-import cardRoutes from './src/routes/cardRoutes.js'; // ✅ NEW: Card routes
+import cardRoutes from './src/routes/cardRoutes.js';
+import adminRoutes from './src/routes/adminRoutes.js';
+import paymentRoutes from './src/routes/paymentRoutes.js'; // ✅ ADDED: Payment routes
 
 // Apply rate limiting to API routes
 app.use('/api/', apiLimiter);
@@ -77,7 +85,11 @@ try {
   console.error('❌ Redis connection failed:', error);
 }
 
-// ==================== PUBLIC ROUTES ====================
+// ==================== ROUTES ====================
+// All route definitions are in their respective router files
+// This file ONLY mounts the routers
+
+// Public routes (no authentication required)
 app.use('/api/auth', authRoutes);
 app.use('/api/members/register', registrationLimiter);
 app.use('/api/programs', programRoutes);
@@ -86,47 +98,17 @@ app.use('/api/services', serviceRoutes);
 app.use('/api/memberships', membershipRoutes);
 app.use('/api/chat', chatRoutes);
 
-// ==================== PROTECTED ROUTES WITH JWT ====================
-app.use('/api/members', authMiddleware, checkTrialExpiry, memberRoutes);
+// Protected routes - require authentication
+app.use('/api/members/profile', authMiddleware, checkTrialExpiry, memberRoutes);
 app.use('/api/bookings', authMiddleware, checkTrialExpiry, bookingRoutes);
-app.use('/api/cards', authMiddleware, cardRoutes); // ✅ NEW: Card routes (protected)
+app.use('/api/cards', authMiddleware, cardRoutes);
+app.use('/api/payments', authMiddleware, paymentRoutes); // ✅ ADDED: Payment routes (protected)
 
-// Program routes that need protection
-app.post('/api/programs/enroll', authMiddleware, checkTrialExpiry, (req, res, next) => {
-  req.url = '/enroll';
-  programRoutes(req, res, next);
-});
+// Admin routes - require authentication and admin role
+app.use('/api/admin', authMiddleware, adminMiddleware, adminRoutes);
 
-app.get('/api/programs/my-enrollments', authMiddleware, checkTrialExpiry, (req, res, next) => {
-  req.url = '/my-enrollments';
-  programRoutes(req, res, next);
-});
-
-app.get('/api/programs/my/saved', authMiddleware, checkTrialExpiry, (req, res, next) => {
-  req.url = '/my/saved';
-  programRoutes(req, res, next);
-});
-
-app.post('/api/programs/:id/save', authMiddleware, checkTrialExpiry, (req, res, next) => {
-  programRoutes(req, res, next);
-});
-
-app.delete('/api/programs/:id/save', authMiddleware, checkTrialExpiry, (req, res, next) => {
-  programRoutes(req, res, next);
-});
-
-// ==================== MEMBERSHIP ROUTES ====================
-app.post('/api/memberships/purchase', authMiddleware, (req, res, next) => {
-  req.url = '/purchase';
-  membershipRoutes(req, res, next);
-});
-
-app.get('/api/memberships/my-membership', authMiddleware, (req, res, next) => {
-  req.url = '/my-membership';
-  membershipRoutes(req, res, next);
-});
-
-// Health check
+// ==================== HEALTH CHECK & UTILITY ROUTES ====================
+// Health check (public)
 app.get('/api/health', (req, res) => {
   res.status(200).json({
     success: true,
@@ -147,20 +129,18 @@ app.get('/api/verify-token', authMiddleware, (req, res) => {
   });
 });
 
-// 404 handler
-app.use(notFound);
-
-// Global error handler
-app.use(globalErrorHandler);
-
-const PORT = process.env.PORT || 5000;
-app.listen(PORT, () => {
-  console.log(`✅ Server running on http://localhost:${PORT}`);
-  console.log(`📝 Environment: ${process.env.NODE_ENV || 'development'}`);
-  console.log(`🌐 CORS enabled for: ${process.env.APP_URL || 'http://localhost:5173, https://gym-application-sooty.vercel.app'}`);
-  console.log(`🔐 JWT Authentication enabled`);
-  console.log(`💬 Chat service enabled with Redis`);
-  console.log(`💳 Card service enabled`); // ✅ NEW: Card service log
+// Test role endpoint - useful for debugging
+app.get('/api/test-role', authMiddleware, (req, res) => {
+  res.json({
+    success: true,
+    message: 'Your role information',
+    data: {
+      user: req.user,
+      isAdmin: req.user.role === 'admin',
+      isTrainer: req.user.role === 'trainer',
+      isMember: req.user.role === 'member'
+    }
+  });
 });
 
 // Redis test endpoint
@@ -188,4 +168,22 @@ app.get('/api/test-redis', async (req, res) => {
       error: error.message
     });
   }
+});
+
+// 404 handler
+app.use(notFound);
+
+// Global error handler
+app.use(globalErrorHandler);
+
+const PORT = process.env.PORT || 5000;
+app.listen(PORT, () => {
+  console.log(`✅ Server running on http://localhost:${PORT}`);
+  console.log(`📝 Environment: ${process.env.NODE_ENV || 'development'}`);
+  console.log(`🌐 CORS enabled for: ${process.env.APP_URL || 'http://localhost:5173, https://gym-application-sooty.vercel.app'}`);
+  console.log(`🔐 JWT Authentication enabled with role-based access control`);
+  console.log(`👥 Roles: admin, trainer, member`);
+  console.log(`💬 Chat service enabled with Redis`);
+  console.log(`💳 Card service enabled`);
+  console.log(`💰 Payment service enabled`); // ✅ ADDED: Payment service log
 });

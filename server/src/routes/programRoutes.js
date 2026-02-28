@@ -99,7 +99,7 @@ router.get('/category/:category', getProgramsByCategory);
 router.get('/stats', getProgramStats);
 
 // ==================== PROTECTED ROUTES (Require Authentication) ====================
-// 🔴 THESE SPECIFIC ROUTES MUST COME BEFORE THE DYNAMIC /:id ROUTE
+// These specific routes MUST come before the dynamic /:id route
 
 /**
  * @route   GET /api/programs/my-enrollments
@@ -114,14 +114,6 @@ router.get('/my-enrollments', authMiddleware, getMyEnrollments);
  * @access  Private
  */
 router.get('/my/saved', authMiddleware, getMySavedPrograms);
-
-/**
- * @route   GET /api/programs/:id
- * @desc    Get a single program by ID
- * @access  Public
- * 🔴 THIS DYNAMIC ROUTE MUST COME AFTER ALL SPECIFIC ROUTES
- */
-router.get('/:id', getProgramById);
 
 /**
  * @route   POST /api/programs/enroll
@@ -144,8 +136,17 @@ router.post('/:id/save', authMiddleware, saveProgram);
  */
 router.delete('/:id/save', authMiddleware, unsaveProgram);
 
+// ==================== DYNAMIC ROUTE ====================
+// THIS MUST COME AFTER ALL SPECIFIC ROUTES
+/**
+ * @route   GET /api/programs/:id
+ * @desc    Get a single program by ID
+ * @access  Public
+ */
+router.get('/:id', getProgramById);
+
 // ==================== ADMIN ONLY ROUTES ====================
-// All routes after this require admin privileges
+// All routes after this require authentication AND admin privileges
 
 // ===== Program Management =====
 /**
@@ -153,21 +154,21 @@ router.delete('/:id/save', authMiddleware, unsaveProgram);
  * @desc    Create a new program
  * @access  Private (Admin only)
  */
-router.post('/', adminMiddleware, createProgram);
+router.post('/', authMiddleware, adminMiddleware, createProgram);
 
 /**
  * @route   PUT /api/programs/:id
  * @desc    Update an existing program
  * @access  Private (Admin only)
  */
-router.put('/:id', adminMiddleware, updateProgram);
+router.put('/:id', authMiddleware, adminMiddleware, updateProgram);
 
 /**
  * @route   DELETE /api/programs/:id
  * @desc    Delete a program (soft delete)
  * @access  Private (Admin only)
  */
-router.delete('/:id', adminMiddleware, deleteProgram);
+router.delete('/:id', authMiddleware, adminMiddleware, deleteProgram);
 
 // ===== Schedule Management =====
 /**
@@ -175,21 +176,21 @@ router.delete('/:id', adminMiddleware, deleteProgram);
  * @desc    Create a new schedule
  * @access  Private (Admin only)
  */
-router.post('/schedules', adminMiddleware, createSchedule);
+router.post('/schedules', authMiddleware, adminMiddleware, createSchedule);
 
 /**
  * @route   PUT /api/programs/schedules/:id
  * @desc    Update a schedule
  * @access  Private (Admin only)
  */
-router.put('/schedules/:id', adminMiddleware, updateSchedule);
+router.put('/schedules/:id', authMiddleware, adminMiddleware, updateSchedule);
 
 /**
  * @route   DELETE /api/programs/schedules/:id
  * @desc    Delete a schedule
  * @access  Private (Admin only)
  */
-router.delete('/schedules/:id', adminMiddleware, deleteSchedule);
+router.delete('/schedules/:id', authMiddleware, adminMiddleware, deleteSchedule);
 
 // ===== Gallery Management =====
 /**
@@ -197,14 +198,14 @@ router.delete('/schedules/:id', adminMiddleware, deleteSchedule);
  * @desc    Add an image to program gallery
  * @access  Private (Admin only)
  */
-router.post('/:programId/gallery', adminMiddleware, addGalleryImage);
+router.post('/:programId/gallery', authMiddleware, adminMiddleware, addGalleryImage);
 
 /**
  * @route   DELETE /api/programs/gallery/:imageId
  * @desc    Remove an image from program gallery
  * @access  Private (Admin only)
  */
-router.delete('/gallery/:imageId', adminMiddleware, removeGalleryImage);
+router.delete('/gallery/:imageId', authMiddleware, adminMiddleware, removeGalleryImage);
 
 // ===== Curriculum Management =====
 /**
@@ -212,21 +213,21 @@ router.delete('/gallery/:imageId', adminMiddleware, removeGalleryImage);
  * @desc    Add a curriculum week to a program
  * @access  Private (Admin only)
  */
-router.post('/:programId/curriculum', adminMiddleware, addCurriculumWeek);
+router.post('/:programId/curriculum', authMiddleware, adminMiddleware, addCurriculumWeek);
 
 /**
  * @route   PUT /api/programs/curriculum/:id
  * @desc    Update a curriculum week
  * @access  Private (Admin only)
  */
-router.put('/curriculum/:id', adminMiddleware, updateCurriculumWeek);
+router.put('/curriculum/:id', authMiddleware, adminMiddleware, updateCurriculumWeek);
 
 /**
  * @route   DELETE /api/programs/curriculum/:id
  * @desc    Remove a curriculum week
  * @access  Private (Admin only)
  */
-router.delete('/curriculum/:id', adminMiddleware, removeCurriculumWeek);
+router.delete('/curriculum/:id', authMiddleware, adminMiddleware, removeCurriculumWeek);
 
 // ===== FAQ Management =====
 /**
@@ -234,21 +235,21 @@ router.delete('/curriculum/:id', adminMiddleware, removeCurriculumWeek);
  * @desc    Add an FAQ to a program
  * @access  Private (Admin only)
  */
-router.post('/:programId/faqs', adminMiddleware, addFaq);
+router.post('/:programId/faqs', authMiddleware, adminMiddleware, addFaq);
 
 /**
  * @route   PUT /api/programs/faqs/:id
  * @desc    Update an FAQ
  * @access  Private (Admin only)
  */
-router.put('/faqs/:id', adminMiddleware, updateFaq);
+router.put('/faqs/:id', authMiddleware, adminMiddleware, updateFaq);
 
 /**
  * @route   DELETE /api/programs/faqs/:id
  * @desc    Remove an FAQ
  * @access  Private (Admin only)
  */
-router.delete('/faqs/:id', adminMiddleware, removeFaq);
+router.delete('/faqs/:id', authMiddleware, adminMiddleware, removeFaq);
 
 // ===== Start Dates Management =====
 /**
@@ -256,21 +257,21 @@ router.delete('/faqs/:id', adminMiddleware, removeFaq);
  * @desc    Add a start date to a program
  * @access  Private (Admin only)
  */
-router.post('/:programId/start-dates', adminMiddleware, addStartDate);
+router.post('/:programId/start-dates', authMiddleware, adminMiddleware, addStartDate);
 
 /**
  * @route   PUT /api/programs/start-dates/:id
  * @desc    Update a start date (spots available)
  * @access  Private (Admin only)
  */
-router.put('/start-dates/:id', adminMiddleware, updateStartDate);
+router.put('/start-dates/:id', authMiddleware, adminMiddleware, updateStartDate);
 
 /**
  * @route   DELETE /api/programs/start-dates/:id
  * @desc    Remove a start date
  * @access  Private (Admin only)
  */
-router.delete('/start-dates/:id', adminMiddleware, removeStartDate);
+router.delete('/start-dates/:id', authMiddleware, adminMiddleware, removeStartDate);
 
 // ===== Related Programs Management =====
 /**
@@ -278,14 +279,14 @@ router.delete('/start-dates/:id', adminMiddleware, removeStartDate);
  * @desc    Add a related program
  * @access  Private (Admin only)
  */
-router.post('/:programId/related', adminMiddleware, addRelatedProgram);
+router.post('/:programId/related', authMiddleware, adminMiddleware, addRelatedProgram);
 
 /**
  * @route   DELETE /api/programs/:programId/related/:relatedProgramId
  * @desc    Remove a related program
  * @access  Private (Admin only)
  */
-router.delete('/:programId/related/:relatedProgramId', adminMiddleware, removeRelatedProgram);
+router.delete('/:programId/related/:relatedProgramId', authMiddleware, adminMiddleware, removeRelatedProgram);
 
 // ===== Upgrade Options Management =====
 /**
@@ -293,13 +294,13 @@ router.delete('/:programId/related/:relatedProgramId', adminMiddleware, removeRe
  * @desc    Add an upgrade option to a program
  * @access  Private (Admin only)
  */
-router.post('/:programId/upgrades', adminMiddleware, addUpgradeOption);
+router.post('/:programId/upgrades', authMiddleware, adminMiddleware, addUpgradeOption);
 
 /**
  * @route   DELETE /api/programs/:programId/upgrades/:upgradeProgramId
  * @desc    Remove an upgrade option
  * @access  Private (Admin only)
  */
-router.delete('/:programId/upgrades/:upgradeProgramId', adminMiddleware, removeUpgradeOption);
+router.delete('/:programId/upgrades/:upgradeProgramId', authMiddleware, adminMiddleware, removeUpgradeOption);
 
 export default router;

@@ -290,10 +290,12 @@ export const validateFile = (file, options = {}) => {
 
 // trainers
 
-// Trainer validation schemas
+// trainers - FIXED with all fields
 export const trainerSchemas = {
   create: Joi.object({
     name: Joi.string().min(2).max(100).required(),
+    first_name: Joi.string().min(2).max(100),
+    last_name: Joi.string().min(2).max(100),
     specialty: Joi.string().min(2).max(100).required(),
     image: Joi.string().uri().allow(''),
     bio: Joi.string().max(1000).allow(''),
@@ -308,11 +310,24 @@ export const trainerSchemas = {
       whatsapp: Joi.string().allow('')
     }),
     featured: Joi.boolean(),
-    size: Joi.string().valid('small', 'regular', 'medium-large', 'large')
+    size: Joi.string().valid('small', 'regular', 'medium-large', 'large'),
+    status: Joi.string().valid('active', 'inactive', 'on_leave').default('active'),
+    // ADD MISSING FIELDS
+    experience_years: Joi.number().integer().min(0).default(0),
+    hourly_rate: Joi.number().min(0).default(0),
+    availability: Joi.array().items(
+      Joi.object({
+        day: Joi.string().valid('Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'),
+        start_time: Joi.string(),
+        end_time: Joi.string()
+      })
+    ).default([])
   }),
 
   update: Joi.object({
     name: Joi.string().min(2).max(100),
+    first_name: Joi.string().min(2).max(100),
+    last_name: Joi.string().min(2).max(100),
     specialty: Joi.string().min(2).max(100),
     image: Joi.string().uri().allow(''),
     bio: Joi.string().max(1000).allow(''),
@@ -328,7 +343,17 @@ export const trainerSchemas = {
     }),
     featured: Joi.boolean(),
     size: Joi.string().valid('small', 'regular', 'medium-large', 'large'),
-    status: Joi.string().valid('active', 'inactive', 'deleted')
+    status: Joi.string().valid('active', 'inactive', 'on_leave', 'deleted'),
+    // ADD MISSING FIELDS - THESE WERE MISSING!
+    experience_years: Joi.number().integer().min(0),
+    hourly_rate: Joi.number().min(0),
+    availability: Joi.array().items(
+      Joi.object({
+        day: Joi.string().valid('Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'),
+        start_time: Joi.string(),
+        end_time: Joi.string()
+      })
+    )
   }).min(1) // At least one field to update
 };
 
@@ -455,8 +480,8 @@ export const membershipSchemas = {
         create: Joi.object({
             name: Joi.string().min(2).max(50).required(),
             description: Joi.string().max(500).allow(''),
-            price_monthly: Joi.number().precision(2).positive().required(),
-            price_yearly: Joi.number().precision(2).positive().required(),
+            price_monthly: Joi.number().precision(2).min(0).required(),
+            price_yearly: Joi.number().precision(2).min(0).required(),
             highlighted: Joi.boolean().default(false),
             features: Joi.array().items(Joi.string()).min(1).required(),
             display_order: Joi.number().integer().min(0).default(0)
@@ -464,8 +489,8 @@ export const membershipSchemas = {
         update: Joi.object({
             name: Joi.string().min(2).max(50),
             description: Joi.string().max(500).allow(''),
-            price_monthly: Joi.number().precision(2).positive(),
-            price_yearly: Joi.number().precision(2).positive(),
+            price_monthly: Joi.number().precision(2).min(0),
+            price_yearly: Joi.number().precision(2).min(0),
             highlighted: Joi.boolean(),
             features: Joi.array().items(Joi.string()).min(1),
             display_order: Joi.number().integer().min(0),
@@ -497,7 +522,8 @@ export const programSchemas = {
     getAll: Joi.object({
         page: Joi.number().integer().min(1).default(1),
         limit: Joi.number().integer().min(1).max(50).default(8),
-        category: Joi.string(),
+        category: Joi.string().allow(''),
+        level: Joi.string().valid('', 'Beginner', 'Intermediate', 'Advanced', 'All Levels').allow(''),
         featured: Joi.boolean(),
         search: Joi.string().allow('')
     }),
@@ -542,7 +568,7 @@ export const programSchemas = {
         instructor_name: Joi.string().max(100).allow(''),
         instructor_bio: Joi.string().max(1000).allow(''),
         instructor_image: Joi.string().uri().allow(''),
-        video_url: Joi.string().uri().allow(''),
+        video_url: Joi.string().uri().allow('').allow(null), // Allow null and empty string
         total_spots: Joi.number().integer().min(1).max(1000),
         enrolled_count: Joi.number().integer().min(0)
     }).min(1),

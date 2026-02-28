@@ -14,14 +14,17 @@ class Trainers {
       socials = {},
       featured = false,
       size = 'regular',
-      status = 'active'
+      status = 'active',
+      experience_years = 0,
+      hourly_rate = 0,
+      availability = []
     } = trainerData;
 
     const query = `
       INSERT INTO public.trainers (
         name, specialty, image, bio, certifications, email, 
-        phone, socials, featured, size, status
-      ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11)
+        phone, socials, featured, size, status, experience_years, hourly_rate, availability
+      ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14)
       RETURNING *
     `;
     
@@ -30,13 +33,16 @@ class Trainers {
       specialty,
       image,
       bio,
-      certifications,
+      certifications, // This is already an array, PostgreSQL accepts it directly
       email,
       phone,
       JSON.stringify(socials),
       featured,
       size,
-      status
+      status,
+      experience_years,
+      hourly_rate,
+      JSON.stringify(availability)
     ];
 
     const result = await pool.query(query, values);
@@ -64,11 +70,18 @@ class Trainers {
       paramCount++;
     }
 
+    if (filters.status) {
+      conditions.push(`status = $${paramCount}`);
+      values.push(filters.status);
+      paramCount++;
+    }
+
     if (filters.search) {
       conditions.push(`(
         name ILIKE $${paramCount} OR 
         specialty ILIKE $${paramCount} OR 
-        bio ILIKE $${paramCount}
+        bio ILIKE $${paramCount} OR
+        email ILIKE $${paramCount}
       )`);
       values.push(`%${filters.search}%`);
       paramCount++;
@@ -120,7 +133,7 @@ class Trainers {
     return result.rows[0];
   }
 
-  // Update trainer
+  // Update trainer - FIXED: Properly handle different data types
   static async update(id, trainerData) {
     const fields = [];
     const values = [];
@@ -128,10 +141,16 @@ class Trainers {
 
     for (const [key, value] of Object.entries(trainerData)) {
       if (value !== undefined) {
-        if (key === 'socials') {
+        if (key === 'socials' || key === 'availability') {
+          // These are JSONB fields
           fields.push(`${key} = $${paramCount}::jsonb`);
           values.push(JSON.stringify(value));
+        } else if (key === 'certifications') {
+          // This is a text[] array field - don't use ::jsonb
+          fields.push(`${key} = $${paramCount}`);
+          values.push(value); // Pass the array directly
         } else {
+          // Regular fields
           fields.push(`${key} = $${paramCount}`);
           values.push(value);
         }
@@ -207,16 +226,25 @@ class Trainers {
 
   // Get trainer statistics
   static async getStats() {
-    const [totalResult, featuredResult, specialtiesResult] = await Promise.all([
+    const [totalResult, featuredResult, specialtiesResult, statsResult] = await Promise.all([
       pool.query("SELECT COUNT(*) FROM public.trainers WHERE status != 'deleted'"),
       pool.query("SELECT COUNT(*) FROM public.trainers WHERE featured = true AND status != 'deleted'"),
-      pool.query("SELECT specialty, COUNT(*) as count FROM public.trainers WHERE status != 'deleted' GROUP BY specialty ORDER BY count DESC")
+      pool.query("SELECT specialty, COUNT(*) as count FROM public.trainers WHERE status != 'deleted' GROUP BY specialty ORDER BY count DESC"),
+      pool.query(`
+        SELECT 
+          AVG(hourly_rate) as avg_hourly_rate,
+          AVG(experience_years) as avg_experience
+        FROM public.trainers 
+        WHERE status != 'deleted'
+      `)
     ]);
 
     return {
       total: parseInt(totalResult.rows[0].count),
       featured: parseInt(featuredResult.rows[0].count),
-      specialties: specialtiesResult.rows
+      specialties: specialtiesResult.rows,
+      avg_hourly_rate: parseFloat(statsResult.rows[0]?.avg_hourly_rate) || 0,
+      avg_experience: parseFloat(statsResult.rows[0]?.avg_experience) || 0
     };
   }
 }

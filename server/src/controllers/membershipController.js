@@ -1,29 +1,56 @@
 import MembershipPlan from '../models/MembershipPlan.js';
 import MemberMembership from '../models/MemberMembership.js';
 import Member from '../models/Members.js';
+import Payment from '../models/Payment.js'; // Import Payment model
 import { membershipSchemas } from '../utils/validation.js';
 import paystackService from '../services/paystackService.js';
 
 // ==================== PUBLIC ROUTES (Get Plans) ====================
 
-// Get all active membership plans
+// Get all active membership plans (PUBLIC)
 export const getAllPlans = async (req, res) => {
     try {
         const plans = await MembershipPlan.findAll('active');
         
-        // Format plans for frontend
-        const formattedPlans = plans.map(plan => ({
-            id: plan.id,
-            name: plan.name,
-            description: plan.description,
-            price: {
-                monthly: parseFloat(plan.price_monthly),
-                yearly: parseFloat(plan.price_yearly)
-            },
-            features: plan.features,
-            highlighted: plan.highlighted,
-            display_order: plan.display_order
-        }));
+        // Get REAL active member counts for each plan
+        const activeCounts = await MemberMembership.countActiveMembersByPlan();
+        
+        // Format plans for frontend with REAL data
+        const formattedPlans = plans.map(plan => {
+            // Calculate trial days based on plan name
+            const trialDays = plan.name.toLowerCase().includes('trial') ? 7 : 0;
+            
+            // Determine if plan is popular (based on member count or explicit flag)
+            const activeMembers = activeCounts[plan.id] || 0;
+            const isPopular = plan.name === 'Pro' || activeMembers > 50;
+            
+            // Calculate monthly revenue (active members × monthly price)
+            const monthlyRevenue = activeMembers * (parseFloat(plan.price_monthly) || 0);
+
+            return {
+                id: plan.id,
+                name: plan.name,
+                description: plan.description,
+                price_monthly: parseFloat(plan.price_monthly) || 0,
+                price_yearly: parseFloat(plan.price_yearly) || 0,
+                price: {
+                    monthly: parseFloat(plan.price_monthly) || 0,
+                    yearly: parseFloat(plan.price_yearly) || 0
+                },
+                features: plan.features || [],
+                highlighted: plan.highlighted || false,
+                display_order: plan.display_order || 0,
+                status: plan.status || 'active',
+                trial_days: trialDays,
+                popular: plan.popular || isPopular,
+                max_members: plan.max_members || null,
+                cancel_anytime: plan.cancel_anytime !== false,
+                active_members: activeMembers,
+                revenue: monthlyRevenue,
+                created_at: plan.created_at,
+                updated_at: plan.updated_at
+            };
+        });
 
         res.json({
             success: true,
@@ -39,7 +66,7 @@ export const getAllPlans = async (req, res) => {
     }
 };
 
-// Get single plan by ID
+// Get single plan by ID (PUBLIC)
 export const getPlanById = async (req, res) => {
     try {
         const plan = await MembershipPlan.findById(req.params.id);
@@ -51,18 +78,38 @@ export const getPlanById = async (req, res) => {
             });
         }
 
+        // Get REAL active member count for this plan
+        const activeCounts = await MemberMembership.countActiveMembersByPlan();
+        const activeMembers = activeCounts[plan.id] || 0;
+
+        // Calculate trial days
+        const trialDays = plan.name.toLowerCase().includes('trial') ? 7 : 0;
+        
+        // Determine if popular
+        const isPopular = plan.name === 'Pro' || activeMembers > 50;
+
         res.json({
             success: true,
             data: {
                 id: plan.id,
                 name: plan.name,
                 description: plan.description,
+                price_monthly: parseFloat(plan.price_monthly) || 0,
+                price_yearly: parseFloat(plan.price_yearly) || 0,
                 price: {
-                    monthly: parseFloat(plan.price_monthly),
-                    yearly: parseFloat(plan.price_yearly)
+                    monthly: parseFloat(plan.price_monthly) || 0,
+                    yearly: parseFloat(plan.price_yearly) || 0
                 },
-                features: plan.features,
-                highlighted: plan.highlighted
+                features: plan.features || [],
+                highlighted: plan.highlighted || false,
+                display_order: plan.display_order || 0,
+                status: plan.status || 'active',
+                trial_days: trialDays,
+                popular: plan.popular || isPopular,
+                max_members: plan.max_members || null,
+                cancel_anytime: plan.cancel_anytime !== false,
+                active_members: activeMembers,
+                revenue: activeMembers * (parseFloat(plan.price_monthly) || 0)
             }
         });
 
@@ -71,6 +118,112 @@ export const getPlanById = async (req, res) => {
         res.status(500).json({
             success: false,
             message: 'Failed to fetch plan'
+        });
+    }
+};
+
+// ==================== ADMIN ROUTES ====================
+
+export const getAllPlansAdmin = async (req, res) => {
+    try {
+        console.log('Fetching all plans for admin...');
+        
+        const { search, status, minPrice, maxPrice, featured, page = 1, limit = 10 } = req.query;
+        console.log('Filters:', { search, status, minPrice, maxPrice, featured, page, limit });
+        
+        // Get all plans (including inactive)
+        const plans = await MembershipPlan.findAllWithInactive();
+        console.log(`Found ${plans.length} total plans`);
+        
+        // Get REAL active member counts for each plan
+        const activeCounts = await MemberMembership.countActiveMembersByPlan();
+        console.log('Active counts:', activeCounts);
+        
+        // Apply filters
+        let filteredPlans = plans.filter(plan => {
+            // Status filter
+            if (status && plan.status !== status) return false;
+            
+            // Featured filter
+            if (featured === 'true' && !plan.highlighted) return false;
+            if (featured === 'false' && plan.highlighted) return false;
+            
+            // Price filters
+            const monthlyPrice = parseFloat(plan.price_monthly) || 0;
+            if (minPrice && monthlyPrice < parseFloat(minPrice)) return false;
+            if (maxPrice && monthlyPrice > parseFloat(maxPrice)) return false;
+            
+            // Search filter
+            if (search) {
+                const searchLower = search.toLowerCase();
+                const nameMatch = plan.name?.toLowerCase().includes(searchLower);
+                const descMatch = plan.description?.toLowerCase().includes(searchLower);
+                if (!nameMatch && !descMatch) return false;
+            }
+            
+            return true;
+        });
+        
+        console.log(`After filters: ${filteredPlans.length} plans`);
+        
+        // Format plans
+        const formattedPlans = filteredPlans.map(plan => {
+            const activeMembers = activeCounts[plan.id] || 0;
+            
+            return {
+                id: plan.id,
+                name: plan.name,
+                description: plan.description,
+                price_monthly: parseFloat(plan.price_monthly) || 0,
+                price_yearly: parseFloat(plan.price_yearly) || 0,
+                price: {
+                    monthly: parseFloat(plan.price_monthly) || 0,
+                    yearly: parseFloat(plan.price_yearly) || 0
+                },
+                features: plan.features || [],
+                highlighted: plan.highlighted || false,
+                display_order: plan.display_order || 0,
+                status: plan.status,
+                trial_days: plan.trial_days || (plan.name?.toLowerCase().includes('trial') ? 7 : 0),
+                popular: plan.popular || false,
+                max_members: plan.max_members || null,
+                cancel_anytime: plan.cancel_anytime !== false,
+                active_members: activeMembers,
+                revenue: activeMembers * (parseFloat(plan.price_monthly) || 0),
+                created_at: plan.created_at,
+                updated_at: plan.updated_at
+            };
+        });
+
+        // Pagination
+        const pageNum = parseInt(page);
+        const limitNum = parseInt(limit);
+        const startIndex = (pageNum - 1) * limitNum;
+        const endIndex = pageNum * limitNum;
+        
+        const paginatedPlans = formattedPlans.slice(startIndex, endIndex);
+
+        res.json({
+            success: true,
+            data: {
+                plans: paginatedPlans,
+                pagination: {
+                    page: pageNum,
+                    limit: limitNum,
+                    total: formattedPlans.length,
+                    totalPages: Math.ceil(formattedPlans.length / limitNum)
+                }
+            }
+        });
+
+    } catch (error) {
+        console.error('❌ ERROR in getAllPlansAdmin:', error);
+        console.error('Error stack:', error.stack);
+        res.status(500).json({
+            success: false,
+            message: 'Failed to fetch all membership plans',
+            error: error.message,
+            stack: process.env.NODE_ENV === 'development' ? error.stack : undefined
         });
     }
 };
@@ -115,11 +268,33 @@ export const purchaseMembership = async (req, res) => {
             ? parseFloat(plan.price_monthly) 
             : parseFloat(plan.price_yearly);
 
-        // Initialize Paystack transaction
+        // Generate unique reference
+        const reference = `PAY-${Date.now()}-${member_id}-${Math.random().toString(36).substr(2, 9)}`;
+
+        // Create payment record FIRST (pending)
+        const payment = await Payment.create({
+            reference,
+            member_id,
+            amount,
+            metadata: {
+                plan_id,
+                plan_name: plan.name,
+                billing_cycle,
+                auto_renew,
+                member_name: `${member.first_name} ${member.last_name}`,
+                member_email: member.email
+            }
+        });
+
+        console.log('💳 Payment record created:', payment.id);
+
+        // Initialize Paystack transaction with payment reference in metadata
         const paystackResponse = await paystackService.initializeTransaction({
             email: member.email,
             amount,
             metadata: {
+                payment_id: payment.id,
+                payment_reference: reference,
                 member_id,
                 plan_id,
                 billing_cycle,
@@ -134,7 +309,8 @@ export const purchaseMembership = async (req, res) => {
             message: 'Redirect to payment',
             data: {
                 authorization_url: paystackResponse.authorization_url,
-                reference: paystackResponse.reference
+                reference: paystackResponse.reference,
+                payment_id: payment.id
             }
         });
 
@@ -151,15 +327,45 @@ export const purchaseMembership = async (req, res) => {
 export const handlePaymentCallback = async (req, res) => {
     try {
         const { reference, trxref } = req.query;
-        const ref = reference || trxref;
+        const paystackRef = reference || trxref;
         
-        if (!ref) {
+        console.log('📞 Callback received with query:', req.query);
+        console.log('💰 Paystack reference:', paystackRef);
+        
+        if (!paystackRef) {
+            console.log('❌ No reference in callback');
             return res.redirect(`${process.env.APP_URL}/membership/failed`);
         }
 
-        // Verify transaction
-        const verification = await paystackService.verifyTransaction(ref);
+        // Verify transaction with Paystack FIRST to get metadata
+        console.log('🔍 Verifying transaction with Paystack...');
+        const verification = await paystackService.verifyTransaction(paystackRef);
+        console.log('📊 Paystack verification response:', verification.data);
         
+        // Get our internal payment reference from metadata
+        const internalRef = verification.data.metadata?.payment_reference;
+        
+        if (!internalRef) {
+            console.log('❌ No internal payment reference in metadata');
+            return res.redirect(`${process.env.APP_URL}/membership/failed`);
+        }
+
+        console.log('🔍 Finding payment by internal reference:', internalRef);
+        
+        // Find payment using our internal reference
+        const existingPayment = await Payment.findByReference(internalRef);
+        console.log('📝 Existing payment:', existingPayment);
+        
+        if (!existingPayment) {
+            console.log('❌ Payment record not found for internal reference:', internalRef);
+            return res.redirect(`${process.env.APP_URL}/membership/failed`);
+        }
+
+        if (existingPayment.status === 'success') {
+            console.log('✅ Payment already processed, redirecting to success');
+            return res.redirect(`${process.env.APP_URL}/membership/success?reference=${internalRef}`);
+        }
+
         if (verification.data.status === 'success') {
             const { member_id, plan_id, billing_cycle, auto_renew } = verification.data.metadata;
             
@@ -174,7 +380,6 @@ export const handlePaymentCallback = async (req, res) => {
             
             let membership;
             if (existingMembership) {
-                // Update existing membership
                 membership = await MemberMembership.update(existingMembership.id, {
                     plan_id,
                     billing_cycle,
@@ -182,8 +387,8 @@ export const handlePaymentCallback = async (req, res) => {
                     auto_renew,
                     status: 'active'
                 });
+                console.log('🔄 Updated existing membership:', membership.id);
             } else {
-                // Create new membership
                 membership = await MemberMembership.purchase({
                     member_id,
                     plan_id,
@@ -191,16 +396,34 @@ export const handlePaymentCallback = async (req, res) => {
                     price_paid,
                     auto_renew
                 });
+                console.log('✅ Created new membership:', membership.id);
             }
 
-            // Redirect to success page
-            res.redirect(`${process.env.APP_URL}/membership/success?reference=${ref}`);
+            // Update payment record with success data
+            const updatedPayment = await Payment.updateAfterSuccess(internalRef, {
+                transaction_id: verification.data.id,
+                payment_method: verification.data.authorization.channel,
+                channel: verification.data.authorization.channel,
+                membership_id: membership.id,
+                paystack_data: verification.data
+            });
+            console.log('💳 Payment record updated:', updatedPayment);
+
+            return res.redirect(`${process.env.APP_URL}/membership/success?reference=${internalRef}`);
         } else {
-            res.redirect(`${process.env.APP_URL}/membership/failed`);
+            console.log('❌ Payment verification failed:', verification.data.status);
+            
+            await Payment.updateAfterFailure(internalRef, {
+                message: verification.data.gateway_response,
+                status: verification.data.status,
+                paystack_data: verification.data
+            });
+            
+            return res.redirect(`${process.env.APP_URL}/membership/failed`);
         }
     } catch (error) {
-        console.error('Payment callback error:', error);
-        res.redirect(`${process.env.APP_URL}/membership/failed`);
+        console.error('❌ Payment callback error:', error);
+        return res.redirect(`${process.env.APP_URL}/membership/failed`);
     }
 };
 
@@ -226,11 +449,90 @@ export const handlePaystackWebhook = async (req, res) => {
         switch(event.event) {
             case 'charge.success':
                 console.log('✅ Payment successful:', event.data.reference);
-                // You can update membership status or send confirmation email here
+                
+                // Get internal reference from metadata
+                const internalRef = event.data.metadata?.payment_reference;
+                
+                if (!internalRef) {
+                    console.log('❌ No internal payment reference in metadata');
+                    return res.sendStatus(200);
+                }
+                
+                // Find payment using internal reference
+                const existingPayment = await Payment.findByReference(internalRef);
+                
+                if (!existingPayment) {
+                    console.log('❌ Payment record not found for reference:', internalRef);
+                    return res.sendStatus(200);
+                }
+
+                if (existingPayment.status === 'success') {
+                    console.log('⚠️ Duplicate webhook - payment already processed');
+                    return res.sendStatus(200);
+                }
+
+                const { member_id, plan_id, billing_cycle, auto_renew } = event.data.metadata;
+                
+                // Calculate price
+                const plan = await MembershipPlan.findById(plan_id);
+                const price_paid = billing_cycle === 'monthly' 
+                    ? parseFloat(plan.price_monthly) 
+                    : parseFloat(plan.price_yearly);
+
+                // CHECK FOR EXISTING MEMBERSHIP (prevent duplicate membership)
+                const existingMembership = await MemberMembership.getActiveByMemberId(member_id);
+                
+                let membership;
+                if (existingMembership) {
+                    // Update existing membership
+                    membership = await MemberMembership.update(existingMembership.id, {
+                        plan_id,
+                        billing_cycle,
+                        price_paid,
+                        auto_renew,
+                        status: 'active'
+                    });
+                    console.log('🔄 Updated existing membership:', membership.id);
+                } else {
+                    // Create new membership
+                    membership = await MemberMembership.purchase({
+                        member_id,
+                        plan_id,
+                        billing_cycle,
+                        price_paid,
+                        auto_renew
+                    });
+                    console.log('✅ Created new membership:', membership.id);
+                }
+
+                // Update payment record with success data
+                await Payment.updateAfterSuccess(internalRef, {
+                    transaction_id: event.data.id,
+                    payment_method: event.data.authorization.channel,
+                    channel: event.data.authorization.channel,
+                    membership_id: membership.id,
+                    paystack_data: event.data
+                });
+
+                console.log('💳 Payment record updated successfully');
+                
                 break;
                 
             case 'charge.failed':
                 console.log('❌ Payment failed:', event.data.reference);
+                
+                // Get internal reference from metadata
+                const failureInternalRef = event.data.metadata?.payment_reference;
+                
+                if (failureInternalRef) {
+                    // Update payment record as failed using internal reference
+                    await Payment.updateAfterFailure(failureInternalRef, {
+                        message: event.data.gateway_response,
+                        status: event.data.status,
+                        paystack_data: event.data
+                    });
+                }
+                
                 break;
                 
             case 'subscription.create':
@@ -477,7 +779,7 @@ export const changePlan = async (req, res) => {
     }
 };
 
-// ==================== ADMIN ROUTES ====================
+// ==================== ADMIN ROUTES (continued) ====================
 
 // Create new plan (admin)
 export const createPlan = async (req, res) => {
@@ -497,10 +799,35 @@ export const createPlan = async (req, res) => {
 
         const plan = await MembershipPlan.create(value);
 
+        // Format the response with all fields
+        const formattedPlan = {
+            id: plan.id,
+            name: plan.name,
+            description: plan.description,
+            price_monthly: parseFloat(plan.price_monthly) || 0,
+            price_yearly: parseFloat(plan.price_yearly) || 0,
+            price: {
+                monthly: parseFloat(plan.price_monthly) || 0,
+                yearly: parseFloat(plan.price_yearly) || 0
+            },
+            features: plan.features || [],
+            highlighted: plan.highlighted || false,
+            display_order: plan.display_order || 0,
+            status: plan.status || 'active',
+            trial_days: plan.trial_days || (plan.name.toLowerCase().includes('trial') ? 7 : 0),
+            popular: plan.popular || false,
+            max_members: plan.max_members || null,
+            cancel_anytime: plan.cancel_anytime !== false,
+            active_members: 0,
+            revenue: 0,
+            created_at: plan.created_at,
+            updated_at: plan.updated_at
+        };
+
         res.status(201).json({
             success: true,
             message: 'Plan created successfully',
-            data: plan
+            data: formattedPlan
         });
 
     } catch (error) {
@@ -537,10 +864,39 @@ export const updatePlan = async (req, res) => {
             });
         }
 
+        // Get REAL active member count for this plan
+        const activeCounts = await MemberMembership.countActiveMembersByPlan();
+        const activeMembers = activeCounts[plan.id] || 0;
+
+        // Format the response with all fields
+        const formattedPlan = {
+            id: plan.id,
+            name: plan.name,
+            description: plan.description,
+            price_monthly: parseFloat(plan.price_monthly) || 0,
+            price_yearly: parseFloat(plan.price_yearly) || 0,
+            price: {
+                monthly: parseFloat(plan.price_monthly) || 0,
+                yearly: parseFloat(plan.price_yearly) || 0
+            },
+            features: plan.features || [],
+            highlighted: plan.highlighted || false,
+            display_order: plan.display_order || 0,
+            status: plan.status || 'active',
+            trial_days: plan.trial_days || (plan.name.toLowerCase().includes('trial') ? 7 : 0),
+            popular: plan.popular || false,
+            max_members: plan.max_members || null,
+            cancel_anytime: plan.cancel_anytime !== false,
+            active_members: activeMembers,
+            revenue: activeMembers * (parseFloat(plan.price_monthly) || 0),
+            created_at: plan.created_at,
+            updated_at: plan.updated_at
+        };
+
         res.json({
             success: true,
             message: 'Plan updated successfully',
-            data: plan
+            data: formattedPlan
         });
 
     } catch (error) {
@@ -639,3 +995,4 @@ export const processRenewals = async (req, res) => {
         });
     }
 };
+

@@ -74,7 +74,6 @@ class MemberMembership {
 
     // ==================== UPDATE MEMBERSHIP ====================
     
-    // ✅ NEW: Update existing membership (for payment callback)
     static async update(id, updateData) {
         const fields = [];
         const values = [];
@@ -197,6 +196,29 @@ class MemberMembership {
                 totalPages: Math.ceil(countResult.rows[0].count / limit)
             }
         };
+    }
+
+    // ==================== NEW: COUNT ACTIVE MEMBERS BY PLAN ====================
+    static async countActiveMembersByPlan() {
+        const query = `
+            SELECT 
+                plan_id,
+                COUNT(DISTINCT member_id) as member_count
+            FROM public.member_memberships
+            WHERE status = 'active' 
+                AND end_date >= CURRENT_DATE
+            GROUP BY plan_id
+        `;
+        
+        const result = await pool.query(query);
+        
+        // Convert to object for easy lookup
+        const counts = {};
+        result.rows.forEach(row => {
+            counts[row.plan_id] = parseInt(row.member_count);
+        });
+        
+        return counts;
     }
 
     // ==================== UPDATE MEMBERSHIP ====================

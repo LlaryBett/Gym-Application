@@ -5,7 +5,7 @@ import MemberMembership from '../models/MemberMembership.js';
 import { memberSchemas } from '../utils/validation.js';
 import brevoService from '../config/brevo.js';
 import { emailTemplates } from '../utils/emailTemplates.js';
-import jwt from 'jsonwebtoken'; // ✅ ADD THIS
+import jwt from 'jsonwebtoken';
 
 // Register new member (public route)
 export const registerMember = async (req, res) => {
@@ -106,6 +106,7 @@ export const registerMember = async (req, res) => {
       email: member.email,
       phone: member.cell_phone,
       status: member.status,
+      role: member.role || 'member', // ✅ Include role in registration response
       createdAt: member.created_at,
       ...(trialInfo && { trial: trialInfo })
     };
@@ -186,6 +187,9 @@ export const login = async (req, res) => {
       });
     }
 
+    // ✅ Ensure role is set (default to 'member')
+    const userRole = member.role || 'member';
+
     // Create user data for response
     const userData = {
       id: member.id,
@@ -194,7 +198,14 @@ export const login = async (req, res) => {
       email: member.email,
       phone: member.cell_phone,
       status: member.status,
-      role: member.role || 'member' // Add role if you have it
+      role: userRole,
+      // Include emergency contact for convenience
+      emergencyContact: {
+        name: member.emergency_contact_name || '',
+        phone: member.emergency_contact_phone || '',
+        email: member.emergency_contact_email || '',
+        relationship: member.emergency_contact_relationship || ''
+      }
     };
 
     // Generate JWT token
@@ -203,19 +214,23 @@ export const login = async (req, res) => {
         id: member.id,
         email: member.email,
         name: userData.name,
-        role: userData.role
+        role: userRole
       },
       process.env.JWT_SECRET,
       { expiresIn: remember_me ? '30d' : '7d' }
     );
 
-    // Return token instead of session
+    // Return token with user data
     res.status(200).json({
       success: true,
       message: 'Login successful',
       data: {
         user: userData,
-        token: token
+        token: token,
+        // Add redirect hint for frontend
+        redirect: userRole === 'admin' ? '/admin' : 
+                 userRole === 'trainer' ? '/trainer/dashboard' : 
+                 '/member/dashboard'
       }
     });
 
@@ -246,7 +261,7 @@ export const getCurrentUser = async (req, res) => {
     // Verify token
     const decoded = jwt.verify(token, process.env.JWT_SECRET);
     
-    // Get user from database
+    // Get user from database (fresh data)
     const member = await Member.findById(decoded.id);
 
     if (!member) {
@@ -256,7 +271,10 @@ export const getCurrentUser = async (req, res) => {
       });
     }
 
-    // Return user data
+    // ✅ Ensure role is set
+    const userRole = member.role || decoded.role || 'member';
+
+    // Return user data with emergency contact
     res.status(200).json({
       success: true,
       data: {
@@ -267,7 +285,7 @@ export const getCurrentUser = async (req, res) => {
           email: member.email,
           phone: member.cell_phone,
           status: member.status,
-          role: member.role || 'member',
+          role: userRole,
           createdAt: member.created_at,
           
           // EMERGENCY CONTACT FIELDS
@@ -304,6 +322,7 @@ export const getCurrentUser = async (req, res) => {
 
 // ✅ UPDATED: Logout (client just removes token)
 export const logout = async (req, res) => {
+  // You could optionally blacklist the token here if you have a token blacklist
   res.status(200).json({
     success: true,
     message: 'Logged out successfully'
@@ -356,6 +375,69 @@ export const forgotMembershipNumber = async (req, res) => {
     res.status(200).json({
       success: true,
       message: 'If an account exists with this email, your membership number has been sent.'
+    });
+  }
+};
+
+// ✅ NEW: Refresh token endpoint (optional)
+export const refreshToken = async (req, res) => {
+  try {
+    const authHeader = req.headers.authorization;
+    if (!authHeader || !authHeader.startsWith('Bearer ')) {
+      return res.status(401).json({
+        success: false,
+        message: 'No token provided'
+      });
+    }
+
+    const oldToken = authHeader.split(' ')[1];
+    
+    // Verify the old token (ignore expiration)
+    const decoded = jwt.verify(oldToken, process.env.JWT_SECRET, { ignoreExpiration: true });
+    
+    // Get fresh user data
+    const member = await Member.findById(decoded.id);
+    
+    if (!member) {
+      return res.status(404).json({
+        success: false,
+        message: 'User not found'
+      });
+    }
+
+    // Check if account is still active
+    if (member.status === 'inactive' || member.status === 'suspended') {
+      return res.status(403).json({
+        success: false,
+        message: 'Your account is not active'
+      });
+    }
+
+    // Generate new token
+    const newToken = jwt.sign(
+      { 
+        id: member.id,
+        email: member.email,
+        name: `${member.first_name} ${member.last_name}`.trim(),
+        role: member.role || 'member'
+      },
+      process.env.JWT_SECRET,
+      { expiresIn: '7d' }
+    );
+
+    res.json({
+      success: true,
+      message: 'Token refreshed successfully',
+      data: {
+        token: newToken
+      }
+    });
+
+  } catch (error) {
+    console.error('Refresh token error:', error);
+    res.status(401).json({
+      success: false,
+      message: 'Invalid token'
     });
   }
 };

@@ -3,7 +3,7 @@ import pool from '../database/db.js';
 class Program {
     // ==================== GET PROGRAMS ====================
     
-    // Get all programs with pagination and filters
+    // Get all programs with pagination and filters - FIXED to include related data
     static async findAll(page = 1, limit = 8, filters = {}) {
         const offset = (page - 1) * limit;
         let query = 'SELECT * FROM public.programs WHERE status = $1';
@@ -17,9 +17,16 @@ class Program {
             paramCount++;
         }
 
-        if (filters.featured !== undefined) {
+        if (filters.level) {
+            query += ` AND level = $${paramCount}`;
+            values.push(filters.level);
+            paramCount++;
+        }
+
+        if (filters.featured !== undefined && filters.featured !== '') {
+            const isFeatured = filters.featured === true || filters.featured === 'true';
             query += ` AND featured = $${paramCount}`;
-            values.push(filters.featured === 'true');
+            values.push(isFeatured);
             paramCount++;
         }
 
@@ -34,31 +41,205 @@ class Program {
         values.push(limit, offset);
 
         const result = await pool.query(query, values);
+        const programs = result.rows;
         
         // Get total count
         let countQuery = 'SELECT COUNT(*) FROM public.programs WHERE status = $1';
         let countValues = ['active'];
+        let countParamCount = 2;
         
         if (filters.category) {
-            countQuery += ` AND category = $2`;
+            countQuery += ` AND category = $${countParamCount}`;
             countValues.push(filters.category);
+            countParamCount++;
+        }
+        
+        if (filters.level) {
+            countQuery += ` AND level = $${countParamCount}`;
+            countValues.push(filters.level);
+            countParamCount++;
+        }
+        
+        if (filters.featured !== undefined && filters.featured !== '') {
+            const isFeatured = filters.featured === true || filters.featured === 'true';
+            countQuery += ` AND featured = $${countParamCount}`;
+            countValues.push(isFeatured);
+            countParamCount++;
+        }
+        
+        if (filters.search) {
+            countQuery += ` AND (title ILIKE $${countParamCount} OR description ILIKE $${countParamCount})`;
+            countValues.push(`%${filters.search}%`);
+            countParamCount++;
         }
         
         const countResult = await pool.query(countQuery, countValues);
+        const totalCount = parseInt(countResult.rows[0].count);
         
+        // If there are no programs, return empty array
+        if (programs.length === 0) {
+            return {
+                programs: [],
+                pagination: {
+                    page: parseInt(page),
+                    limit: parseInt(limit),
+                    total: 0,
+                    totalPages: 0
+                }
+            };
+        }
+
+        // Get related data for all programs
+        const programIds = programs.map(p => p.id);
+        
+        // 1. Get all schedules for these programs
+        const schedulesQuery = `
+            SELECT * FROM public.program_schedules 
+            WHERE program_id = ANY($1::int[]) AND status = 'active'
+            ORDER BY program_id, day_of_week, start_time
+        `;
+        const schedulesResult = await pool.query(schedulesQuery, [programIds]);
+        const schedulesByProgram = {};
+        schedulesResult.rows.forEach(schedule => {
+            if (!schedulesByProgram[schedule.program_id]) {
+                schedulesByProgram[schedule.program_id] = [];
+            }
+            schedulesByProgram[schedule.program_id].push(schedule);
+        });
+        
+        // 2. Get all curriculum
+        const curriculumQuery = `
+            SELECT * FROM public.program_curriculum 
+            WHERE program_id = ANY($1::int[])
+            ORDER BY program_id, week_number
+        `;
+        const curriculumResult = await pool.query(curriculumQuery, [programIds]);
+        const curriculumByProgram = {};
+        curriculumResult.rows.forEach(item => {
+            if (!curriculumByProgram[item.program_id]) {
+                curriculumByProgram[item.program_id] = [];
+            }
+            curriculumByProgram[item.program_id].push(item);
+        });
+        
+        // 3. Get all FAQs
+        const faqsQuery = `
+            SELECT * FROM public.program_faqs 
+            WHERE program_id = ANY($1::int[])
+            ORDER BY program_id, display_order
+        `;
+        const faqsResult = await pool.query(faqsQuery, [programIds]);
+        const faqsByProgram = {};
+        faqsResult.rows.forEach(faq => {
+            if (!faqsByProgram[faq.program_id]) {
+                faqsByProgram[faq.program_id] = [];
+            }
+            faqsByProgram[faq.program_id].push(faq);
+        });
+        
+        // 4. Get all gallery images
+        const galleryQuery = `
+            SELECT * FROM public.program_gallery 
+            WHERE program_id = ANY($1::int[])
+            ORDER BY program_id, display_order
+        `;
+        const galleryResult = await pool.query(galleryQuery, [programIds]);
+        const galleryByProgram = {};
+        galleryResult.rows.forEach(image => {
+            if (!galleryByProgram[image.program_id]) {
+                galleryByProgram[image.program_id] = [];
+            }
+            galleryByProgram[image.program_id].push(image);
+        });
+        
+        // 5. Get all start dates
+        const startDatesQuery = `
+            SELECT * FROM public.program_start_dates 
+            WHERE program_id = ANY($1::int[]) AND status = 'active'
+            ORDER BY program_id, start_date
+        `;
+        const startDatesResult = await pool.query(startDatesQuery, [programIds]);
+        const startDatesByProgram = {};
+        startDatesResult.rows.forEach(date => {
+            if (!startDatesByProgram[date.program_id]) {
+                startDatesByProgram[date.program_id] = [];
+            }
+            startDatesByProgram[date.program_id].push(date);
+        });
+        
+        // 6. Get all related programs
+        const relatedQuery = `
+            SELECT pr.*, p.title, p.image, p.price, p.duration, p.category
+            FROM public.program_related pr
+            JOIN public.programs p ON pr.related_program_id = p.id
+            WHERE pr.program_id = ANY($1::int[]) AND p.status = 'active'
+            ORDER BY pr.program_id, pr.display_order
+        `;
+        const relatedResult = await pool.query(relatedQuery, [programIds]);
+        const relatedByProgram = {};
+        relatedResult.rows.forEach(rel => {
+            if (!relatedByProgram[rel.program_id]) {
+                relatedByProgram[rel.program_id] = [];
+            }
+            relatedByProgram[rel.program_id].push({
+                id: rel.related_program_id,
+                title: rel.title,
+                image: rel.image,
+                price: rel.price,
+                duration: rel.duration,
+                category: rel.category,
+                display_order: rel.display_order
+            });
+        });
+        
+        // 7. Get all upgrade options
+        const upgradeQuery = `
+            SELECT pu.*, p.title, p.price, p.duration
+            FROM public.program_upgrade_options pu
+            JOIN public.programs p ON pu.upgrade_program_id = p.id
+            WHERE pu.program_id = ANY($1::int[]) AND p.status = 'active'
+            ORDER BY pu.program_id, pu.display_order
+        `;
+        const upgradeResult = await pool.query(upgradeQuery, [programIds]);
+        const upgradeByProgram = {};
+        upgradeResult.rows.forEach(up => {
+            if (!upgradeByProgram[up.program_id]) {
+                upgradeByProgram[up.program_id] = [];
+            }
+            upgradeByProgram[up.program_id].push({
+                id: up.upgrade_program_id,
+                title: up.title,
+                price: up.price,
+                duration: up.duration,
+                badge_text: up.badge_text,
+                display_order: up.display_order
+            });
+        });
+
+        // Combine all data with each program
+        const programsWithDetails = programs.map(program => ({
+            ...program,
+            schedule: schedulesByProgram[program.id] || [],
+            curriculum: curriculumByProgram[program.id] || [],
+            faqs: faqsByProgram[program.id] || [],
+            gallery: galleryByProgram[program.id] || [],
+            start_dates: startDatesByProgram[program.id] || [],
+            related_programs: relatedByProgram[program.id] || [],
+            upgrade_options: upgradeByProgram[program.id] || []
+        }));
+
         return {
-            programs: result.rows,
+            programs: programsWithDetails,
             pagination: {
                 page: parseInt(page),
                 limit: parseInt(limit),
-                total: parseInt(countResult.rows[0].count),
-                totalPages: Math.ceil(countResult.rows[0].count / limit)
+                total: totalCount,
+                totalPages: Math.ceil(totalCount / limit)
             }
         };
     }
 
     // ==================== FIXED: Get program by ID with ALL related data ====================
-    // Using separate queries to avoid complex JSON aggregation errors
     static async findById(id) {
         try {
             // 1. Get the main program
@@ -231,15 +412,11 @@ class Program {
             
             const enrollmentResult = await client.query(enrollmentQuery, [programId, memberId]);
             
-            // Update program enrolled count if capacity is numeric
+            // Update program enrolled count
             await client.query(
                 `UPDATE public.programs 
-                 SET capacity = CONCAT(
-                     COALESCE(SPLIT_PART(capacity, '/', 1)::INTEGER + 1, 1), 
-                     '/', 
-                     COALESCE(SPLIT_PART(capacity, '/', 2), '20')
-                 )
-                 WHERE id = $1 AND capacity LIKE '%/%'`,
+                 SET enrolled_count = enrolled_count + 1
+                 WHERE id = $1`,
                 [programId]
             );
             
@@ -254,59 +431,35 @@ class Program {
         }
     }
 
-   // Get member's enrolled programs
-static async getMemberEnrollments(memberId) {
-    try {
-        console.log('========== DEBUG ==========');
-        console.log('Getting enrollments for member:', memberId);
-        
-        // First, check if the table exists and has data
-        const checkTable = await pool.query(`
-            SELECT EXISTS (
-                SELECT FROM information_schema.tables 
-                WHERE table_schema = 'public' 
-                AND table_name = 'program_enrollments'
-            );
-        `);
-        console.log('Table exists:', checkTable.rows[0].exists);
-        
-        // Check if member has any enrollments
-        const checkEnrollments = await pool.query(
-            'SELECT * FROM public.program_enrollments WHERE member_id = $1',
-            [memberId]
-        );
-        console.log('Raw enrollments:', checkEnrollments.rows);
-        
-        // Now try the join query
-        const query = `
-            SELECT 
-                e.*, 
-                p.id as program_id,
-                p.title, 
-                p.image, 
-                p.description, 
-                p.category,
-                p.price,
-                p.duration,
-                p.level,
-                p.capacity
-            FROM public.program_enrollments e
-            JOIN public.programs p ON e.program_id = p.id
-            WHERE e.member_id = $1
-            ORDER BY e.created_at DESC
-        `;
-        
-        console.log('Query:', query);
-        const result = await pool.query(query, [memberId]);
-        console.log('Query result:', result.rows);
-        console.log('==========================');
-        
-        return result.rows;
-    } catch (error) {
-        console.error('❌ ERROR in getMemberEnrollments:', error);
-        throw error; // This will show the REAL error in your terminal
+    // Get member's enrolled programs
+    static async getMemberEnrollments(memberId) {
+        try {
+            const query = `
+                SELECT 
+                    e.*, 
+                    p.id as program_id,
+                    p.title, 
+                    p.image, 
+                    p.description, 
+                    p.category,
+                    p.price,
+                    p.duration,
+                    p.level,
+                    p.capacity,
+                    p.enrolled_count
+                FROM public.program_enrollments e
+                JOIN public.programs p ON e.program_id = p.id
+                WHERE e.member_id = $1
+                ORDER BY e.created_at DESC
+            `;
+            
+            const result = await pool.query(query, [memberId]);
+            return result.rows;
+        } catch (error) {
+            console.error('❌ ERROR in getMemberEnrollments:', error);
+            throw error;
+        }
     }
-}
 
     // ==================== SAVE/UNSAVE PROGRAM (WISHLIST) ====================
     
@@ -442,7 +595,7 @@ static async getMemberEnrollments(memberId) {
         values.push(id);
         const query = `
             UPDATE public.programs
-            SET ${fields.join(', ')}
+            SET ${fields.join(', ')}, updated_at = CURRENT_TIMESTAMP
             WHERE id = $${paramCount}
             RETURNING *
         `;
@@ -719,7 +872,7 @@ static async getMemberEnrollments(memberId) {
         values.push(id);
         const query = `
             UPDATE public.program_schedules
-            SET ${fields.join(', ')}
+            SET ${fields.join(', ')}, updated_at = CURRENT_TIMESTAMP
             WHERE id = $${paramCount}
             RETURNING *
         `;

@@ -2,21 +2,16 @@ import express from 'express';
 import {
   getAllTrainers,
   getTrainerById,
-  createTrainer,
-  updateTrainer,
-  deleteTrainer,
   getFeaturedTrainers,
   getTrainersBySpecialty,
   getSpecialties,
   getTrainerStats
 } from '../controllers/trainersController.js';
-import { authMiddleware, adminMiddleware } from '../middleware/auth.js';
 
 const router = express.Router();
 
 // ==================== PUBLIC ROUTES ====================
 // These routes do NOT require authentication
-// Anyone can view trainers, specialties, and stats
 
 /**
  * @route   GET /api/trainers
@@ -48,7 +43,7 @@ router.get('/specialty/:specialty', getTrainersBySpecialty);
 
 /**
  * @route   GET /api/trainers/stats
- * @desc    Get trainer statistics (total trainers, by specialty, etc.)
+ * @desc    Get trainer statistics
  * @access  Public
  */
 router.get('/stats', getTrainerStats);
@@ -59,29 +54,5 @@ router.get('/stats', getTrainerStats);
  * @access  Public
  */
 router.get('/:id', getTrainerById);
-
-// ==================== PROTECTED ROUTES ====================
-// These routes require authentication AND admin privileges
-
-/**
- * @route   POST /api/trainers
- * @desc    Create a new trainer
- * @access  Private (Admin only)
- */
-router.post('/', authMiddleware, adminMiddleware, createTrainer);
-
-/**
- * @route   PUT /api/trainers/:id
- * @desc    Update an existing trainer
- * @access  Private (Admin only)
- */
-router.put('/:id', authMiddleware, adminMiddleware, updateTrainer);
-
-/**
- * @route   DELETE /api/trainers/:id
- * @desc    Delete a trainer (soft delete)
- * @access  Private (Admin only)
- */
-router.delete('/:id', authMiddleware, adminMiddleware, deleteTrainer);
 
 export default router;

@@ -1,4 +1,3 @@
-// server/src/services/paystackService.js
 import axios from 'axios';
 import crypto from 'crypto';
 

@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react'
+import React, { useState, useEffect, useRef } from 'react' // Add useRef
 import toast from 'react-hot-toast'
 import { Link, useNavigate } from 'react-router-dom'
 import { FaEnvelope, FaIdCard, FaQuoteLeft, FaStar } from 'react-icons/fa'
@@ -25,6 +25,7 @@ const floatStyle = `
 const Login = () => {
   const navigate = useNavigate()
   const { login } = useAuth()
+  const isSubmitting = useRef(false) // Add this to prevent double submission
   
   const [formData, setFormData] = useState({
     email: '',
@@ -85,6 +86,11 @@ const Login = () => {
 
   const handleSubmit = async (e) => {
     e.preventDefault()
+    
+    // Prevent double submission
+    if (isSubmitting.current || loading) return
+    
+    isSubmitting.current = true
     setLoading(true)
     setError('')
 
@@ -97,24 +103,20 @@ const Login = () => {
       
       const response = await login(loginData)
       
-      if (!response.success) {
-        if (response.error) {
-          toast.error(response.error)
-        }
-        return
+      if (response?.success) {
+        toast.success('Login successful!')
+        // Use the redirect path from the response, default to '/' if not provided
+        const redirectPath = response?.data?.redirect || '/'
+        navigate(redirectPath)
+      } else {
+        toast.error(response?.error || 'Login failed. Please check your credentials.')
       }
-      
-      if (response.message) {
-        toast.success(response.message)
-      }
-      navigate('/')
     } catch (err) {
       console.error('Login error:', err)
-      if (err.message) {
-        toast.error(err.message)
-      }
+      toast.error('An unexpected error occurred')
     } finally {
       setLoading(false)
+      isSubmitting.current = false
     }
   }
 
@@ -171,8 +173,6 @@ const Login = () => {
               </p>
               <div className="w-16 h-1 bg-orange-500 mt-3 rounded-full"></div>
             </div>
-
-            {/* Error Message Box - Removed to use toast only */}
 
             <form onSubmit={handleSubmit} className="space-y-4">
               
