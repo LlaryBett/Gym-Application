@@ -9,8 +9,9 @@ import {
   FaGenderless, FaUserTag, FaInfoCircle, FaExclamationTriangle
 } from 'react-icons/fa';
 import { useAuth } from '../hooks/authHooks';
-import { authAPI, memberAPI } from '../services/api';
+import { authAPI, memberAPI, cardAPI } from '../services/api';
 import { membershipService } from '../services/membershipService';
+import MembershipCardModal from '../components/Card';
 import { programService } from '../services/programService';
 import { bookingService } from '../services/bookingService';
 import CTA from '../components/CTA';
@@ -25,6 +26,8 @@ const Profile = () => {
   
   const [profile, setProfile] = useState(null);
   const [membership, setMembership] = useState(null);
+  const [card, setCard] = useState(null);
+  const [showCardModal, setShowCardModal] = useState(false);
   const [enrolledPrograms, setEnrolledPrograms] = useState([]);
   const [upcomingBookings, setUpcomingBookings] = useState([]);
   const [savedPrograms, setSavedPrograms] = useState([]);
@@ -53,6 +56,7 @@ const Profile = () => {
       // Fetch all data
       const profileRes = await authAPI.getCurrentUser();
       const membershipRes = await membershipService.getMyMembership().catch(() => ({ success: false, data: null }));
+      const cardRes = await cardAPI.getMyCard().catch(() => ({ success: false, data: null }));
       const enrollmentsRes = await programService.getMyEnrollments().catch(() => ({ success: false, data: [] }));
       const bookingsRes = await bookingService.getUserBookings(user.id, { upcoming: true, limit: 5 }).catch(() => ({ success: false, data: { bookings: [] } }));
       const savedRes = await programService.getMySavedPrograms().catch(() => ({ success: false, data: [] }));
@@ -90,6 +94,7 @@ const Profile = () => {
 
       // Set other data
       if (membershipRes.success) setMembership(membershipRes.data);
+      if (cardRes.success) setCard(cardRes.data);
       setEnrolledPrograms(enrollmentsRes.success ? enrollmentsRes.data || [] : []);
       setUpcomingBookings(bookingsRes.success ? bookingsRes.data.bookings || [] : []);
       setSavedPrograms(savedRes.success ? savedRes.data || [] : []);
@@ -211,6 +216,9 @@ const Profile = () => {
 
   return (
     <div className="min-h-screen bg-gray-50">
+      {showCardModal && card && (
+        <MembershipCardModal card={card} onClose={() => setShowCardModal(false)} />
+      )}
       {/* ── MOBILE LAYOUT (< lg) ── */}
       <div className="lg:hidden">
         <div className="container mx-auto px-4 py-8 space-y-6">
@@ -243,6 +251,14 @@ const Profile = () => {
           {/* Mobile Membership Card */}
           {membership && <MembershipCard membership={membership} formatDate={formatDate} handleCancelMembership={handleCancelMembership} />}
 
+
+          {/* Mobile Card Display Button */}
+          {card && (
+            <button onClick={() => setShowCardModal(true)} className="w-full px-6 py-3 bg-gradient-to-r from-blue-600 to-blue-800 text-white font-semibold rounded-xl hover:opacity-90 transition flex items-center justify-center gap-2">
+              <FaCreditCard /> View Membership Card
+            </button>
+          )}
+
           {/* Mobile Tabs */}
           <div className="flex gap-1 overflow-x-auto pb-1">
             {tabs.map(tab => (
@@ -257,6 +273,17 @@ const Profile = () => {
                 {tab.label}
               </button>
             ))}
+            
+            {/* Mobile Card Button */}
+            {card && (
+              <button
+                onClick={() => setShowCardModal(true)}
+                className="flex items-center gap-1.5 px-3 py-2 rounded-full font-medium text-sm whitespace-nowrap transition bg-white text-gray-600 hover:bg-gray-100"
+              >
+                <span className="text-xs"><FaCreditCard /></span>
+                Card
+              </button>
+            )}
           </div>
 
           {/* Mobile Tab Content */}
@@ -341,6 +368,17 @@ const Profile = () => {
                     {activeTab === tab.id && <FaChevronRight className="ml-auto text-orange-400" size={10} />}
                   </button>
                 ))}
+                
+                {/* Card Button */}
+                {card && (
+                  <button
+                    onClick={() => setShowCardModal(true)}
+                    className="w-full flex items-center gap-3 px-5 py-3.5 text-sm font-medium transition border-t border-gray-50 text-gray-600 hover:bg-gray-50 border-l-2 border-transparent"
+                  >
+                    <span className="text-gray-400"><FaCreditCard /></span>
+                    View Card
+                  </button>
+                )}
               </nav>
 
               {/* Quick Stats */}

@@ -409,6 +409,29 @@ export const handlePaymentCallback = async (req, res) => {
             });
             console.log('💳 Payment record updated:', updatedPayment);
 
+            // ===== SIMPLE CARD ISSUANCE =====
+            try {
+                // Dynamically import card controller
+                const { issueMembershipCard } = await import('./cardController.js');
+                
+                // Create minimal request object
+                const cardReq = { user: { id: member_id } };
+                
+                // Create minimal response object
+                const cardRes = {
+                    status: () => ({ json: () => {} }),
+                    json: () => {}
+                };
+                
+                // Issue the card
+                await issueMembershipCard(cardReq, cardRes);
+                console.log('✅ Card issued successfully for member:', member_id);
+                
+            } catch (cardError) {
+                console.error('❌ Card issuance failed:', cardError.message);
+                // Don't block the payment success
+            }
+
             return res.redirect(`${process.env.APP_URL}/membership/success?reference=${internalRef}`);
         } else {
             console.log('❌ Payment verification failed:', verification.data.status);
@@ -515,6 +538,29 @@ export const handlePaystackWebhook = async (req, res) => {
                 });
 
                 console.log('💳 Payment record updated successfully');
+
+                // ===== SIMPLE CARD ISSUANCE =====
+                try {
+                    // Dynamically import card controller
+                    const { issueMembershipCard } = await import('./cardController.js');
+                    
+                    // Create minimal request object
+                    const cardReq = { user: { id: member_id } };
+                    
+                    // Create minimal response object
+                    const cardRes = {
+                        status: () => ({ json: () => {} }),
+                        json: () => {}
+                    };
+                    
+                    // Issue the card
+                    await issueMembershipCard(cardReq, cardRes);
+                    console.log('✅ Card issued successfully for member:', member_id);
+                    
+                } catch (cardError) {
+                    console.error('❌ Card issuance failed:', cardError.message);
+                    // Don't block the webhook success
+                }
                 
                 break;
                 
@@ -995,4 +1041,3 @@ export const processRenewals = async (req, res) => {
         });
     }
 };
-
