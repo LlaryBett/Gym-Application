@@ -229,8 +229,8 @@ export const login = async (req, res) => {
         token: token,
         // Add redirect hint for frontend
         redirect: userRole === 'admin' ? '/admin' : 
-                 userRole === 'trainer' ? '/trainer/dashboard' : 
-                 '/member/dashboard'
+                 userRole === 'trainer' ? '/dashboard' : 
+                 '/dashboard'
       }
     });
 
