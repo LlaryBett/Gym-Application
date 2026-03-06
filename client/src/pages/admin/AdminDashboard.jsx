@@ -9,7 +9,7 @@ import {
   XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer,
   LineChart, Line
 } from 'recharts';
-import { adminAPI } from '../../services/adminAPI';
+import { adminAPI } from '../../services/adminApi';
 import toast from 'react-hot-toast';
 
 const Dashboard = () => {

@@ -8,7 +8,7 @@ import {
   FaCloud, FaChartLine, FaSlidersH, FaToggleOn,
   FaToggleOff, FaCheck, FaTimes
 } from 'react-icons/fa';
-import { adminAPI } from '../../services/adminAPI';
+import { adminAPI } from '../../services/adminApi';
 import toast from 'react-hot-toast';
 
 const Settings = () => {

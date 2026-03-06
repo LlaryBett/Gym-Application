@@ -6,7 +6,7 @@ import {
   FaFileExport, FaEnvelope, FaPhone, FaCalendar,
   FaUserTag, FaIdCard, FaDumbbell
 } from 'react-icons/fa';
-import { adminAPI } from '../../services/adminAPI';
+import { adminAPI } from '../../services/adminApi';
 import toast from 'react-hot-toast';
 import DataTable from '../../components/admin/DataTable';
 import StatusBadge from '../../components/admin/StatusBadge';
