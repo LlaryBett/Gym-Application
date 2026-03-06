@@ -8,7 +8,7 @@ import {
   FaVideo, FaUsers, FaDumbbell
 } from 'react-icons/fa';
 import { GiStrongMan } from 'react-icons/gi';
-import { adminAPI } from '../../services/adminAPI';
+import { adminAPI } from '../../services/adminApi';
 import toast from 'react-hot-toast';
 import DataTable from '../../components/admin/DataTable';
 import StatusBadge from '../../components/admin/StatusBadge';

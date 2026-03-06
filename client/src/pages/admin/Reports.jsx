@@ -13,7 +13,7 @@ import {
   Tooltip, Legend, ResponsiveContainer, RadarChart,
   PolarGrid, PolarAngleAxis, PolarRadiusAxis, Radar
 } from 'recharts';
-import { adminAPI } from '../../services/adminAPI';
+import { adminAPI } from '../../services/adminApi';
 import toast from 'react-hot-toast';
 import DateRangePicker from '../../components/admin/DateRangePicker';
 import ReportCard from '../../components/admin/ReportCard';
