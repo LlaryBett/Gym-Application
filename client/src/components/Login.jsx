@@ -112,8 +112,23 @@ const Login = () => {
         toast.error(response?.error || 'Login failed. Please check your credentials.')
       }
     } catch (err) {
-      console.error('Login error:', err)
-      toast.error('An unexpected error occurred')
+      console.error('🔴 Login component catch error:', err)
+      console.error('Error message:', err.message)
+      console.error('Error suspended:', err.suspended)
+      
+      // Handle suspension redirect
+      if (err.suspended === true || err.message === 'Account suspended') {
+        console.log('✅ Redirecting to suspended page')
+        navigate('/suspended', {
+          state: {
+            reason: err.reason || 'Violation of terms of service',
+            suspended_at: err.suspended_at
+          }
+        })
+        return
+      }
+      
+      toast.error(err.message || 'An unexpected error occurred')
     } finally {
       setLoading(false)
       isSubmitting.current = false

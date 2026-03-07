@@ -211,5 +211,17 @@ export const adminAPI = {
   exportPrograms: (format = 'csv', filters = {}) => {
     const query = new URLSearchParams(filters).toString();
     return api.post(`/admin/programs/export?format=${format}${query ? `&${query}` : ''}`);
+  },
+
+  // ==================== SETTINGS ====================
+  getSettings: () => api.get('/admin/settings'),
+  
+  updateSettings: (settings) => api.put('/admin/settings', settings),
+  
+  getSystemHealth: () => api.get('/admin/settings/health'),
+  
+  getLogsAndActivity: (filters = {}) => {
+    const query = new URLSearchParams(filters).toString();
+    return api.get(`/admin/settings/logs${query ? `?${query}` : ''}`);
   }
 };

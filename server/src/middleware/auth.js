@@ -39,8 +39,19 @@ export const authMiddleware = async (req, res, next) => {
       });
     }
 
-    // Check if account is active
-    if (member.status === 'inactive' || member.status === 'suspended') {
+    // Check if account is suspended
+    if (member.status === 'suspended') {
+      console.log('❌ Account suspended:', member.suspension_reason);
+      return res.status(403).json({
+        success: false,
+        message: 'Account suspended',
+        reason: member.suspension_reason || 'Violation of terms of service',
+        suspended_at: member.suspended_at
+      });
+    }
+
+    // Check if account is inactive
+    if (member.status === 'inactive') {
       console.log('❌ Account not active:', member.status);
       return res.status(403).json({
         success: false,

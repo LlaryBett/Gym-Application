@@ -38,6 +38,21 @@ export default function AuthProvider({ children }) {
       }
     } catch (error) {
       console.error('❌ Auth verification failed:', error);
+      
+      // Handle account suspension (check for suspended_at field which indicates suspension)
+      if (error.status === 403 && error.suspended_at) {
+        console.log('⚠️ Account is suspended');
+        navigate('/suspended', { 
+          state: { 
+            reason: error.reason || 'Violation of terms of service',
+            suspended_at: error.suspended_at,
+            membershipNumber: error.membershipNumber || 'N/A'
+          } 
+        });
+        setLoading(false);
+        return;
+      }
+      
       if (error.status === 401) {
         localStorage.removeItem('token');
         setUser(null);
@@ -70,6 +85,20 @@ export default function AuthProvider({ children }) {
       
       return { success: false, error: response.message || 'Login failed' };
     } catch (error) {
+      console.log('🔴 Login catch error:', error);
+      console.log('Error status:', error.status);
+      console.log('Error message:', error.message);
+      
+      // Handle any 403 error (suspended, inactive, etc) - redirect to suspended page
+      if (error.status === 403) {
+        console.log('✅ Account inactive/suspended - throwing suspension error');
+        const suspensionError = new Error('Account suspended');
+        suspensionError.suspended = true;
+        suspensionError.reason = error.reason || 'Your account is not active. Please contact support.';
+        suspensionError.suspended_at = error.suspended_at || new Date().toISOString();
+        throw suspensionError;
+      }
+      
       setError(error.message || 'Login failed');
       return { success: false, error: error.message };
     }

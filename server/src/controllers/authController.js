@@ -180,10 +180,25 @@ export const login = async (req, res) => {
     }
 
     // Check if member is active or pending
-    if (member.status === 'inactive' || member.status === 'suspended') {
+    if (member.status === 'inactive') {
       return res.status(403).json({
         success: false,
         message: 'Your account is not active. Please contact support.'
+      });
+    }
+
+    // Check if member is suspended and return suspension details
+    if (member.status === 'suspended') {
+      return res.status(403).json({
+        success: false,
+        message: 'Account suspended',
+        suspended: true,
+        reason: member.suspension_reason || 'No reason provided',
+        suspended_at: member.suspended_at,
+        data: {
+          suspension_reason: member.suspension_reason,
+          suspended_at: member.suspended_at
+        }
       });
     }
 

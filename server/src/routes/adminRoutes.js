@@ -19,7 +19,9 @@ import {
   getMemberById,
   updateMember,
   deleteMember,
-  getMemberStats
+  getMemberStats,
+  suspendMember,
+  reactivateMember
 } from '../controllers/memberController.js';
 
 // Import trainer controller functions
@@ -86,6 +88,20 @@ router.put('/members/:id', updateMember);
 router.delete('/members/:id', deleteMember);
 
 /**
+ * @route   PUT /api/admin/members/:id/suspend
+ * @desc    Suspend a member with reason
+ * @access  Private (Admin only)
+ */
+router.put('/members/:id/suspend', suspendMember);
+
+/**
+ * @route   PUT /api/admin/members/:id/reactivate
+ * @desc    Reactivate a suspended member
+ * @access  Private (Admin only)
+ */
+router.put('/members/:id/reactivate', reactivateMember);
+
+/**
  * @route   GET /api/admin/members/stats
  * @desc    Get member statistics
  * @access  Private (Admin only)
@@ -141,5 +157,135 @@ router.put('/trainers/:id', updateTrainer);
  * @access  Private (Admin only)
  */
 router.delete('/trainers/:id', deleteTrainer);
+
+// ==================== SETTINGS ROUTES ====================
+/**
+ * @route   GET /api/admin/settings
+ * @desc    Get all admin settings
+ * @access  Private (Admin only)
+ */
+router.get('/settings', (req, res) => {
+  res.json({
+    success: true,
+    data: {
+      general: {
+        gymName: 'PowerGym',
+        gymEmail: 'info@powergym.com',
+        gymPhone: '+254 712 345 678',
+        gymAddress: '123 Fitness Street, Workout City',
+        timezone: 'Africa/Nairobi',
+        currency: 'KES',
+        dateFormat: 'DD/MM/YYYY',
+        timeFormat: '24h'
+      },
+      appearance: {
+        primaryColor: '#f97316',
+        secondaryColor: '#000000',
+        logo: '/logo.png',
+        favicon: '/favicon.ico',
+        theme: 'light',
+        accentColor: '#facc15',
+        fontFamily: 'Inter'
+      },
+      notifications: {
+        emailNotifications: true,
+        smsNotifications: true,
+        pushNotifications: false,
+        bookingReminders: true,
+        membershipExpiry: true,
+        paymentReceipts: true,
+        promotionalEmails: false,
+        adminAlerts: true
+      },
+      email: {
+        smtpHost: 'smtp.gmail.com',
+        smtpPort: 587,
+        smtpSecure: true,
+        smtpUser: 'noreply@powergym.com',
+        smtpPassword: '********',
+        fromEmail: 'noreply@powergym.com',
+        fromName: 'PowerGym',
+        replyTo: 'support@powergym.com'
+      },
+      payment: {
+        provider: 'paystack',
+        paystackPublicKey: 'pk_test_...',
+        paystackSecretKey: 'sk_test_...',
+        currency: 'KES',
+        taxRate: 16,
+        depositRequired: false,
+        depositPercentage: 50,
+        autoRenew: true,
+        gracePeriod: 3
+      },
+      membership: {
+        trialDays: 7,
+        maxMembers: 1000,
+        allowCancellation: true,
+        cancellationNotice: 30,
+        freezeAllowed: true,
+        maxFreezeDays: 60,
+        autoApprove: false,
+        requirePayment: true
+      },
+      bookings: {
+        maxAdvanceDays: 30,
+        minNoticeHours: 2,
+        maxPerDay: 3,
+        allowCancellation: true,
+        cancellationHours: 24,
+        allowRescheduling: true,
+        rescheduleFee: 0,
+        noShowFee: 500
+      },
+      security: {
+        twoFactorAuth: false,
+        sessionTimeout: 30,
+        passwordExpiry: 90,
+        maxLoginAttempts: 5,
+        lockoutDuration: 15,
+        ipWhitelist: [],
+        allowedDomains: ['powergym.com'],
+        requireStrongPassword: true
+      },
+      integrations: {
+        googleAnalytics: ''
+      },
+      system: {
+        logLevel: 'info',
+        cacheDuration: 3600,
+        backupFrequency: 'daily',
+        backupTime: '02:00',
+        maintenanceMessage: 'The system is under maintenance. Please try again later.',
+        maintenance: false,
+        cacheEnabled: true
+      }
+    }
+  });
+});
+
+/**
+ * @route   PUT /api/admin/settings
+ * @desc    Update admin settings
+ * @access  Private (Admin only)
+ */
+router.put('/settings', (req, res) => {
+  const { general, branding, membership, booking, notifications, security } = req.body;
+  
+  // Here you would validate and save the settings to database
+  res.json({
+    success: true,
+    message: 'Settings updated successfully',
+    data: {
+      general,
+      branding,
+      membership,
+      booking,
+      notifications,
+      security,
+      updatedAt: new Date().toISOString()
+    }
+  });
+});
 
 export default router;

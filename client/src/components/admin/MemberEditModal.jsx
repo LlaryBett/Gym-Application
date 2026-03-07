@@ -13,7 +13,8 @@ const MemberEditModal = ({
     name: '',
     email: '',
     phone: '',
-    status: ''
+    status: '',
+    suspensionReason: ''
   });
   const [loading, setLoading] = useState(false);
 
@@ -23,7 +24,8 @@ const MemberEditModal = ({
         name: member.name || '',
         email: member.email || '',
         phone: member.phone || '',
-        status: member.status || 'active'
+        status: member.status || 'active',
+        suspensionReason: member.suspension_reason || ''
       });
     }
   }, [member, isOpen]);
@@ -143,6 +145,25 @@ const MemberEditModal = ({
               <option value="pending">Pending</option>
             </select>
           </div>
+
+          {/* Suspension Reason - visible only when status is suspended */}
+          {formData.status === 'suspended' && (
+            <div>
+              <label className="block text-sm font-semibold text-gray-900 mb-2">
+                Suspension Reason *
+              </label>
+              <textarea
+                name="suspensionReason"
+                value={formData.suspensionReason}
+                onChange={handleInputChange}
+                required={formData.status === 'suspended'}
+                placeholder="Enter the reason for suspension (e.g., Non-payment, Violation of terms, etc.)"
+                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-orange-500 resize-none"
+                rows="3"
+                disabled={loading}
+              />
+            </div>
+          )}
         </form>
 
         {/* Footer */}

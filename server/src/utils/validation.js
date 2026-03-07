@@ -139,6 +139,8 @@ export const memberSchemas = {
     status: Joi.string().valid('pending', 'active', 'suspended', 'cancelled'),
     membership_type: Joi.string().valid('standard', 'premium', 'student', 'family'),
     membershipType: Joi.string().valid('standard', 'premium', 'student', 'family'),
+    suspension_reason: Joi.string().allow('').max(500),
+    suspensionReason: Joi.string().allow('').max(500),
     date_of_birth: Joi.date().iso().max('now'),
     dateOfBirth: Joi.date().iso().max('now'),
     inquiry: Joi.string().max(1000),

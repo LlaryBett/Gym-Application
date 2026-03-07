@@ -198,6 +198,12 @@ function transformUpdateData(data) {
     delete transformed.hearAboutUs;
   }
   
+  // Map suspensionReason to suspension_reason
+  if (transformed.suspensionReason !== undefined) {
+    transformed.suspension_reason = transformed.suspensionReason;
+    delete transformed.suspensionReason;
+  }
+  
   // Map cellPhone to cell_phone
   if (transformed.cellPhone !== undefined) {
     transformed.cell_phone = transformed.cellPhone;
@@ -337,6 +343,91 @@ export const approveMembership = async (req, res) => {
     res.status(500).json({
       success: false,
       message: 'Failed to approve membership'
+    });
+  }
+};
+
+// Suspend a member with reason
+export const suspendMember = async (req, res) => {
+  try {
+    const { id } = req.params;
+    const { reason } = req.body;
+    
+    if (!reason) {
+      return res.status(400).json({
+        success: false,
+        message: 'Suspension reason is required'
+      });
+    }
+    
+    // Format the date properly for PostgreSQL
+    const suspendedDate = new Date().toISOString();
+    
+    const member = await Member.update(id, {
+      status: 'suspended',
+      suspension_reason: reason,
+      suspended_at: suspendedDate
+    });
+    
+    if (!member) {
+      return res.status(404).json({
+        success: false,
+        message: 'Member not found'
+      });
+    }
+    
+    res.json({
+      success: true,
+      message: 'Member suspended successfully',
+      data: {
+        id: member.id,
+        name: `${member.first_name} ${member.last_name}`,
+        status: member.status,
+        reason: member.suspension_reason,
+        suspendedAt: member.suspended_at
+      }
+    });
+  } catch (error) {
+    console.error('Suspend member error:', error);
+    res.status(500).json({
+      success: false,
+      message: 'Failed to suspend member'
+    });
+  }
+};
+
+// Reactivate a suspended member
+export const reactivateMember = async (req, res) => {
+  try {
+    const { id } = req.params;
+    
+    const member = await Member.update(id, {
+      status: 'active',
+      suspension_reason: null,
+      suspended_at: null
+    });
+    
+    if (!member) {
+      return res.status(404).json({
+        success: false,
+        message: 'Member not found'
+      });
+    }
+    
+    res.json({
+      success: true,
+      message: 'Member reactivated successfully',
+      data: {
+        id: member.id,
+        name: `${member.first_name} ${member.last_name}`,
+        status: member.status
+      }
+    });
+  } catch (error) {
+    console.error('Reactivate member error:', error);
+    res.status(500).json({
+      success: false,
+      message: 'Failed to reactivate member'
     });
   }
 };
