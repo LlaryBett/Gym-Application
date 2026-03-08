@@ -21,7 +21,7 @@ const request = async (endpoint, options = {}) => {
     ...options,
     headers,
   };
-
+// services/api.js - complete request function with error handling
   try {
     const response = await fetch(`${API_BASE_URL}${endpoint}`, config);
     
